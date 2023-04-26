@@ -1,10 +1,10 @@
 from enum import IntEnum
 
-class DEVICE_STATES(IntEnum):
-    CONNECTED = 0
-    CONNECTING = 1
-    DISCONNECTED = 2
-    ERROR = 3
+class DEVICE_STATES():
+    CONNECTED = 'CONNECTED'
+    CONNECTING = 'CONNECTING'
+    DISCONNECTED = 'DISCONNECTED'
+    ERROR = 'ERROR'
 
 class STATUS_CODES(IntEnum):
     OK = 200
@@ -51,6 +51,6 @@ class EVENTS():
     CONNECT = 'connect'
     DISCONNECT = 'disconnect'
 
-class EVENT_CATEGORY(IntEnum):
-    DEVICE = 0
-    ENTITY = 1
+class EVENT_CATEGORY():
+    DEVICE = 'DEVICE'
+    ENTITY = 'ENTITY'
