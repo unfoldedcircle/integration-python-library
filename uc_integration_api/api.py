@@ -17,9 +17,9 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 class IntegrationAPI:
-    def __init__(self, type="default"):
-        self._loop = None
-        self.events = None
+    def __init__(self, loop, type="default"):
+        self._loop = loop
+        self.events = AsyncIOEventEmitter(self._loop)
         self.driverInfo = {}
         self._driverPath = None
         self.state = uc.DEVICE_STATES.DISCONNECTED
@@ -29,14 +29,11 @@ class IntegrationAPI:
         self.availableEntities = None
         self.configuredEntities = None
 
-    async def init(self, loop, driverPath):
-        self._loop = loop
-        self._driverPath = driverPath
-
         # Setup event loop
         asyncio.set_event_loop(self._loop)
 
-        self.events = AsyncIOEventEmitter(self._loop)
+    async def init(self, driverPath):
+        self._driverPath = driverPath
 
         # Load driver config
         file = open(self._driverPath)
