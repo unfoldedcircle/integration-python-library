@@ -30,6 +30,8 @@ class MESSAGES():
 class MSG_EVENTS():
     CONNECT = 'connect'
     DISCONNECT = 'disconnect'
+    ENTER_STANDBY = 'enter_standby'
+    EXIT_STANDBY = 'exit_standby'
     DRIVER_VERSION = 'driver_version'
     DEVICE_STATE = 'device_state'
     AVAILABLE_ENTITIES = 'available_entities'
@@ -50,6 +52,8 @@ class EVENTS():
     SETUP_DRIVER_ABORT = 'setup_driver_abort'
     CONNECT = 'connect'
     DISCONNECT = 'disconnect'
+    ENTER_STANDBY = 'enter_standby'
+    EXIT_STANDBY = 'exit_standby'
 
 class EVENT_CATEGORY():
     DEVICE = 'DEVICE'

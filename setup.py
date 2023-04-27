@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-PACKAGE_NAME = 'uc_integration_api'
+PACKAGE_NAME = 'ucapi'
 HERE = path.abspath(path.dirname(__file__))
 VERSION = '0.0.1'
 
@@ -18,7 +18,7 @@ setup(
     author="Unfolded Circle ApS",
     author_email="hello@unfoldedcircle.com",
     license="MIT",
-    packages=['uc_integration_api'],
+    packages=['ucapi'],
     include_package_data=True,
-    install_requires=find_packages(["asyncio", "websockets", "json", "logging", "pyee.base"])
+    install_requires=find_packages()
     )
