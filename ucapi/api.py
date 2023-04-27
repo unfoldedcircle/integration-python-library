@@ -3,10 +3,7 @@ import websockets
 import json
 import logging
 import os
-import sys
 import socket
-
-sys.path.insert(0, os.getcwd())
 
 from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
