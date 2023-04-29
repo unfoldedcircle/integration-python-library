@@ -27,6 +27,9 @@ class IntegrationAPI:
         self.state = uc.DEVICE_STATES.DISCONNECTED
         self._serverTask = None
         self._clients = set()
+        
+        self._interface = os.getenv('UC_INTEGRATION_INTERFACE')
+        self._port = os.getenv('UC_INTEGRATION_HTTP_PORT')
 
         self.availableEntities = entities.Entities("available", self._loop)
         self.configuredEntities = entities.Entities("configured", self._loop)
@@ -56,19 +59,21 @@ class IntegrationAPI:
 
         # Set driver URL
         self.driverInfo["driver_url"] = self.getDriverUrl(
-            self.driverInfo["driver_url"] if "driver_url" in self.driverInfo else None,
+            self.driverInfo["driver_url"] if "driver_url" in self.driverInfo else self._interface,
             self.driverInfo["port"],
         )
 
         # Set driver name
         name = self._getDefaultLanguageString(self.driverInfo["name"], "Unknown driver")
-        url = self.driverInfo["driver_id"]
+        url = self._interface
+
+        addr = socket.gethostbyname(socket.gethostname()) if self.driverInfo["driver_url"] is None else self._interface
 
         # Setup zeroconf service info
         info = AsyncServiceInfo(
             "_uc-integration._tcp.local.",
             f"{url}._uc-integration._tcp.local.",
-            addresses=[socket.gethostbyname(socket.gethostname())],
+            addresses=[addr],
             port=int(self.driverInfo["port"]),
             properties={
                 "name": name,
@@ -94,7 +99,7 @@ class IntegrationAPI:
             if driverUrl.startswith("ws://") or driverUrl.startswith("wss://"):
                 return driverUrl
 
-            return "ws://" + os.uname().nodename + ":" + port
+            return "ws://" + self._interface + ":" + port
 
         return None
 
@@ -123,8 +128,7 @@ class IntegrationAPI:
             return text
 
     async def _startWebSocketServer(self):
-        addr = socket.gethostbyname(socket.gethostname())
-        async with websockets.serve(self._handleWs, addr, int(self.driverInfo["port"])):
+        async with websockets.serve(self._handleWs, self._interface, int(self.driverInfo["port"])):
             await asyncio.Future()
 
     async def _handleWs(self, websocket):
