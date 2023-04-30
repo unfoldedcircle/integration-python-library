@@ -39,6 +39,7 @@ class IntegrationAPI:
 
     async def init(self, driverPath):
         self._driverPath = driverPath
+        self._port = self.driverInfo["port"] if "port" in self.driverInfo else self._port
 
         @self.configuredEntities.events.on(uc.EVENTS.ENTITY_ATTRIBUTES_UPDATED)
         async def event_handler(id, entityType, attributes):
@@ -60,7 +61,7 @@ class IntegrationAPI:
         # Set driver URL
         self.driverInfo["driver_url"] = self.getDriverUrl(
             self.driverInfo["driver_url"] if "driver_url" in self.driverInfo else self._interface,
-            self.driverInfo["port"],
+            self._port
         )
 
         # Set driver name
