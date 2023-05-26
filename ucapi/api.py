@@ -70,12 +70,14 @@ class IntegrationAPI:
 
         addr = socket.gethostbyname(socket.gethostname()) if self.driverInfo["driver_url"] is None else self._interface
 
+        print(self._port)
+
         # Setup zeroconf service info
         info = AsyncServiceInfo(
             "_uc-integration._tcp.local.",
             f"{url}._uc-integration._tcp.local.",
             addresses=[addr],
-            port=int(self.driverInfo["port"]),
+            port=int(self._port),
             properties={
                 "name": name,
                 "ver": self.driverInfo["version"],
@@ -92,7 +94,7 @@ class IntegrationAPI:
             self.driverInfo["driver_id"],
             self.driverInfo["version"],
             self.driverInfo["driver_url"],
-            self.driverInfo["port"],
+            self._port,
         )
 
     def getDriverUrl(self, driverUrl, port):
@@ -129,7 +131,7 @@ class IntegrationAPI:
             return text
 
     async def _startWebSocketServer(self):
-        async with websockets.serve(self._handleWs, self._interface, int(self.driverInfo["port"])):
+        async with websockets.serve(self._handleWs, self._interface, int(self._port)):
             await asyncio.Future()
 
     async def _handleWs(self, websocket):
