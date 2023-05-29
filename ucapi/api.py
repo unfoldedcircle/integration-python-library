@@ -30,6 +30,11 @@ class IntegrationAPI:
         
         self._interface = os.getenv('UC_INTEGRATION_INTERFACE')
         self._port = os.getenv('UC_INTEGRATION_HTTP_PORT')
+        # TODO: add support for secured
+        self._httpsEnabled = os.getenv('UC_INTEGRATION_HTTPS_ENABLED', 'False').lower() in ('true', '1', 't')
+        self._disableMdnsPublish = os.getenv('UC_DISABLE_MDNS_PUBLISH', 'False').lower() in ('true', '1', 't')
+
+        self.configDirPath = os.getenv('UC_CONFIG_HOME')
 
         self.availableEntities = entities.Entities("available", self._loop)
         self.configuredEntities = entities.Entities("configured", self._loop)
@@ -70,24 +75,23 @@ class IntegrationAPI:
 
         addr = socket.gethostbyname(socket.gethostname()) if self.driverInfo["driver_url"] is None else self._interface
 
-        print(self._port)
+        if self._disableMdnsPublish is False:
+            # Setup zeroconf service info
+            info = AsyncServiceInfo(
+                "_uc-integration._tcp.local.",
+                f"{url}._uc-integration._tcp.local.",
+                addresses=[addr],
+                port=int(self._port),
+                properties={
+                    "name": name,
+                    "ver": self.driverInfo["version"],
+                    "developer": self.driverInfo["developer"]["name"],
+                },
+            )
+            zeroconf = AsyncZeroconf(ip_version=IPVersion.V4Only)
+            await zeroconf.async_register_service(info)
 
-        # Setup zeroconf service info
-        info = AsyncServiceInfo(
-            "_uc-integration._tcp.local.",
-            f"{url}._uc-integration._tcp.local.",
-            addresses=[addr],
-            port=int(self._port),
-            properties={
-                "name": name,
-                "ver": self.driverInfo["version"],
-                "developer": self.driverInfo["developer"]["name"],
-            },
-        )
-        zeroconf = AsyncZeroconf(ip_version=IPVersion.V4Only)
-        await zeroconf.async_register_service(info)
-
-        self._serverTask = self._loop.create_task(self._startWebSocketServer())
+            self._serverTask = self._loop.create_task(self._startWebSocketServer())
 
         LOG.info(
             "Driver is up: %s, version: %s, listening on: %s : %s",
