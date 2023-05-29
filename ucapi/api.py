@@ -91,14 +91,13 @@ class IntegrationAPI:
             zeroconf = AsyncZeroconf(ip_version=IPVersion.V4Only)
             await zeroconf.async_register_service(info)
 
-            self._serverTask = self._loop.create_task(self._startWebSocketServer())
+        self._serverTask = self._loop.create_task(self._startWebSocketServer())
 
         LOG.info(
-            "Driver is up: %s, version: %s, listening on: %s : %s",
+            "Driver is up: %s, version: %s, listening on: %s",
             self.driverInfo["driver_id"],
             self.driverInfo["version"],
-            self.driverInfo["driver_url"],
-            self._port,
+            self.driverInfo["driver_url"]
         )
 
     def getDriverUrl(self, driverUrl, port):
