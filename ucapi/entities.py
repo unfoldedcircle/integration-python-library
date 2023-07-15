@@ -81,6 +81,7 @@ class Entities:
                 "features": self._storage[entity].features,
                 "name": self._storage[entity].name,
                 "area": self._storage[entity].area,
+                "device_class": self._storage[entity].deviceClass,
             }
 
             entities.append(res)
