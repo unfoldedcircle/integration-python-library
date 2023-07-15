@@ -15,6 +15,8 @@ class STATES:
     OFF = "OFF"
     PLAYING = "PLAYING"
     PAUSED = "PAUSED"
+    STANDBY = "STANDBY"
+    BUFFERING = "BUFFERING"
 
 
 class FEATURES:
@@ -41,6 +43,11 @@ class FEATURES:
     MEDIA_ALBUM = "media_album"
     MEDIA_IMAGE_URL = "media_image_url"
     MEDIA_TYPE = "media_type"
+    DPAD = "dpad"
+    HOME = "home"
+    MENU = "menu"
+    COLOR_BUTTONS = "color_buttons"
+    CHANNEL_SWITCHER = "channel_switcher"
     SOURCE = "source"
     SOUND_MODE = "sound_mode"
 
@@ -83,14 +90,31 @@ class COMMANDS:
     UNMUTE = "unmute"
     REPEAT = "repeat"
     SHUFFLE = "shuffle"
-    SOURCE = "source"
-    SOUND_MODE = "sound_mode"
+    CHANNEL_UP = "channel_up"
+    CHANNEL_DOWN = "channel_down"
+    CURSOR_UP = "cursor_up"
+    CURSOR_DOWN = "cursor_down"
+    CURSOR_LEFT = "cursor_left"
+    CURSOR_RIGHT = "cursor_right"
+    CURSOR_ENTER = "cursor_enter"
+    FUNCTION_RED = "function_red"
+    FUNCTION_GREEN = "function_green"
+    FUNCTION_YELLOW = "function_yellow"
+    FUNCTION_BLUE = "function_blue"
+    HOME = "home"
+    MENU = "menu"
+    BACK = "back"
+    SELECT_SOURCE = "select_source"
+    SELECT_SOUND_MODE = "select_sound_mode"
     SEARCH = "search"
 
 
 class DEVICECLASSES:
     RECEIVER = "receiver"
+    SET_TOP_BOX = "set_top_box"
     SPEAKER = "speaker"
+    STREAMING_BOX = "streaming_box"
+    TV = "tv"
 
 
 class OPTIONS:
