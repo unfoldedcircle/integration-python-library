@@ -48,8 +48,8 @@ class FEATURES:
     MENU = "menu"
     COLOR_BUTTONS = "color_buttons"
     CHANNEL_SWITCHER = "channel_switcher"
-    SOURCE = "source"
-    SOUND_MODE = "sound_mode"
+    SELECT_SOURCE = "select_source"
+    SELECT_SOUND_MODE = "select_sound_mode"
 
 
 class ATTRIBUTES:
