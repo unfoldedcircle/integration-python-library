@@ -121,6 +121,13 @@ class OPTIONS:
     VOLUME_STEPS = "volume_steps"
 
 
+class MEDIA_TYPE:
+    MUSIC = "MUSIC"
+    RADIO = "RADIO"
+    TVSHOW = "TVSHOW"
+    MOVIE = "MOVIE"
+    VIDEO = "VIDEO"
+
 class MediaPlayer(Entity):
     def __init__(self, id, name, features, attributes, deviceClass = None, options = None, area=None, type="default"):
         super().__init__(
