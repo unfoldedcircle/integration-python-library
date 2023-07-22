@@ -117,7 +117,7 @@ class IntegrationAPI:
             return text["en"]
 
         for index, key, value in text.items():
-            if index is 0:
+            if index == 0:
                 defaultText = value
 
             if key.startswith("en-"):
