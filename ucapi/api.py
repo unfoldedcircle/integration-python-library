@@ -79,7 +79,7 @@ class IntegrationAPI:
             # Setup zeroconf service info
             info = AsyncServiceInfo(
                 "_uc-integration._tcp.local.",
-                f"{url}._uc-integration._tcp.local.",
+                f"{self.driverInfo['driver_id']}._uc-integration._tcp.local.",
                 addresses=[addr],
                 port=int(self._port),
                 properties={
