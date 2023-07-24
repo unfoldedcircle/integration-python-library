@@ -158,6 +158,7 @@ class IntegrationAPI:
         finally:
             self._clients.remove(websocket)
             LOG.info("WS: Client removed")
+            self.events.emit(uc.EVENTS.DISCONNECT)
 
     async def _sendOkResult(self, websocket, id, msgData={}):
         await self._sendResponse(websocket, id, "result", msgData, 200)
