@@ -1,7 +1,6 @@
 import logging
 
-from ucapi.entity import TYPES
-from ucapi.entity import Entity
+from ucapi.entity import TYPES, Entity
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)

@@ -1,14 +1,9 @@
-import json
 import logging
-
-import ucapi.button as button
-import ucapi.media_player as media_player
 
 from pyee import AsyncIOEventEmitter
 
-from ucapi.entity import TYPES
-from ucapi.entity import Entity
 from ucapi.api_definitions import EVENTS
+from ucapi.entity import Entity
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
@@ -34,9 +29,7 @@ class Entities:
 
     def addEntity(self, entity: Entity):
         if entity.id in self._storage:
-            LOG.debug(
-                "ENTITIES(%s): Entity already exists with id: %s", self.id, entity.id
-            )
+            LOG.debug("ENTITIES(%s): Entity already exists with id: %s", self.id, entity.id)
             return False
 
         self._storage[entity.id] = entity
@@ -57,7 +50,7 @@ class Entities:
             LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, id)
             return True
 
-        for key in attributes:          
+        for key in attributes:
             self._storage[id].attributes[key] = attributes[key]
 
         self.events.emit(

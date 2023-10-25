@@ -1,14 +1,13 @@
 import asyncio
-import websockets
 import json
 import logging
 import os
 import socket
 
+import websockets
+from pyee import AsyncIOEventEmitter
 from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
-
-from pyee import AsyncIOEventEmitter
 
 import ucapi.api_definitions as uc
 import ucapi.entities as entities
@@ -27,14 +26,14 @@ class IntegrationAPI:
         self.state = uc.DEVICE_STATES.DISCONNECTED
         self._serverTask = None
         self._clients = set()
-        
-        self._interface = os.getenv('UC_INTEGRATION_INTERFACE')
-        self._port = os.getenv('UC_INTEGRATION_HTTP_PORT')
-        # TODO: add support for secured
-        self._httpsEnabled = os.getenv('UC_INTEGRATION_HTTPS_ENABLED', 'False').lower() in ('true', '1', 't')
-        self._disableMdnsPublish = os.getenv('UC_DISABLE_MDNS_PUBLISH', 'False').lower() in ('true', '1', 't')
 
-        self.configDirPath = os.getenv('UC_CONFIG_HOME')
+        self._interface = os.getenv("UC_INTEGRATION_INTERFACE")
+        self._port = os.getenv("UC_INTEGRATION_HTTP_PORT")
+        # TODO: add support for secured
+        self._httpsEnabled = os.getenv("UC_INTEGRATION_HTTPS_ENABLED", "False").lower() in ("true", "1", "t")
+        self._disableMdnsPublish = os.getenv("UC_DISABLE_MDNS_PUBLISH", "False").lower() in ("true", "1", "t")
+
+        self.configDirPath = os.getenv("UC_CONFIG_HOME")
 
         self.availableEntities = entities.Entities("available", self._loop)
         self.configuredEntities = entities.Entities("configured", self._loop)
@@ -54,9 +53,7 @@ class IntegrationAPI:
                 "attributes": attributes,
             }
 
-            await self._broadcastEvent(
-                uc.MSG_EVENTS.ENTITY_CHANGE, data, uc.EVENT_CATEGORY.ENTITY
-            )
+            await self._broadcastEvent(uc.MSG_EVENTS.ENTITY_CHANGE, data, uc.EVENT_CATEGORY.ENTITY)
 
         # Load driver config
         file = open(self._driverPath)
@@ -65,8 +62,7 @@ class IntegrationAPI:
 
         # Set driver URL
         self.driverInfo["driver_url"] = self.getDriverUrl(
-            self.driverInfo["driver_url"] if "driver_url" in self.driverInfo else self._interface,
-            self._port
+            self.driverInfo["driver_url"] if "driver_url" in self.driverInfo else self._interface, self._port
         )
 
         # Set driver name
@@ -97,7 +93,7 @@ class IntegrationAPI:
             "Driver is up: %s, version: %s, listening on: %s",
             self.driverInfo["driver_id"],
             self.driverInfo["version"],
-            self.driverInfo["driver_url"]
+            self.driverInfo["driver_url"],
         )
 
     def getDriverUrl(self, driverUrl, port):
@@ -166,9 +162,7 @@ class IntegrationAPI:
     async def _sendErrorResult(self, websocket, id, statusCode=500, msgData={}):
         await self._sendResponse(websocket, id, "result", msgData, statusCode)
 
-    async def _sendResponse(
-        self, websocket, id, msg, msgData, statusCode=uc.STATUS_CODES.OK
-    ):
+    async def _sendResponse(self, websocket, id, msg, msgData, statusCode=uc.STATUS_CODES.OK):
         data = {
             "kind": "resp",
             "req_id": id,
@@ -213,13 +207,9 @@ class IntegrationAPI:
 
         if kind == "req":
             if msg == uc.MESSAGES.GET_DRIVER_VERSION:
-                await self._sendResponse(
-                    websocket, id, uc.MSG_EVENTS.DRIVER_VERSION, self.getDriverVersion()
-                )
+                await self._sendResponse(websocket, id, uc.MSG_EVENTS.DRIVER_VERSION, self.getDriverVersion())
             elif msg == uc.MESSAGES.GET_DEVICE_STATE:
-                await self._sendResponse(
-                    websocket, id, uc.MSG_EVENTS.DEVICE_STATE, self.state
-                )
+                await self._sendResponse(websocket, id, uc.MSG_EVENTS.DEVICE_STATE, self.state)
             elif msg == uc.MESSAGES.GET_AVAILABLE_ENTITIES:
                 availableEntities = self.availableEntities.getEntities()
                 await self._sendResponse(
@@ -245,9 +235,7 @@ class IntegrationAPI:
                 await self._unsubscribeEvents(msgData)
                 await self._sendOkResult(websocket, id)
             elif msg == uc.MESSAGES.GET_DRIVER_METADATA:
-                await self._sendResponse(
-                    websocket, id, uc.MSG_EVENTS.DRIVER_METADATA, self.driverInfo
-                )
+                await self._sendResponse(websocket, id, uc.MSG_EVENTS.DRIVER_METADATA, self.driverInfo)
             elif msg == uc.MESSAGES.SETUP_DRIVER:
                 await self._setupDriver(websocket, id, msgData)
             elif msg == uc.MESSAGES.SET_DRIVER_USER_DATA:
@@ -286,9 +274,7 @@ class IntegrationAPI:
     async def setDeviceState(self, state):
         self.state = state
 
-        await self._broadcastEvent(
-            uc.MSG_EVENTS.DEVICE_STATE, {"state": self.state}, uc.EVENT_CATEGORY.DEVICE
-        )
+        await self._broadcastEvent(uc.MSG_EVENTS.DEVICE_STATE, {"state": self.state}, uc.EVENT_CATEGORY.DEVICE)
 
     async def _subscribeEvents(self, entities):
         for entityId in entities["entity_ids"]:
@@ -330,13 +316,9 @@ class IntegrationAPI:
 
     async def _setDriverUserData(self, websocket, id, data):
         if "input_values" in data:
-            self.events.emit(
-                uc.EVENTS.SETUP_DRIVER_USER_DATA, websocket, id, data["input_values"]
-            )
+            self.events.emit(uc.EVENTS.SETUP_DRIVER_USER_DATA, websocket, id, data["input_values"])
         elif "confirm" in data:
-            self.events.emit(
-                uc.EVENTS.SETUP_DRIVER_USER_CONFIRMATION, websocket, id, data=None
-            )
+            self.events.emit(uc.EVENTS.SETUP_DRIVER_USER_CONFIRMATION, websocket, id, data=None)
         else:
             LOG.warning("Unsupported set_driver_user_data payload received")
 
@@ -346,13 +328,9 @@ class IntegrationAPI:
     async def driverSetupProgress(self, websocket):
         data = {"event_type": "SETUP", "state": "SETUP"}
 
-        await self._sendEvent(
-            websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE
-        )
+        await self._sendEvent(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
 
-    async def requestDriverSetupUserConfirmation(
-        self, websocket, title, msg1=None, image=None, msg2=None
-    ):
+    async def requestDriverSetupUserConfirmation(self, websocket, title, msg1=None, image=None, msg2=None):
         data = {
             "event_type": "SETUP",
             "state": "WAIT_USER_ACTION",
@@ -366,33 +344,23 @@ class IntegrationAPI:
             },
         }
 
-        await self._sendEvent(
-            websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE
-        )
+        await self._sendEvent(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
 
     async def requestDriverSetupUserInput(self, websocket, title, settings):
         data = {
             "event_type": "SETUP",
             "state": "WAIT_USER_ACTION",
-            "require_user_action": {
-                "input": {"title": self._toLanguageObject(title), "settings": settings}
-            },
+            "require_user_action": {"input": {"title": self._toLanguageObject(title), "settings": settings}},
         }
 
-        await self._sendEvent(
-            websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE
-        )
+        await self._sendEvent(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
 
     async def driverSetupComplete(self, websocket):
         data = {"event_type": "STOP", "state": "OK"}
 
-        await self._sendEvent(
-            websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE
-        )
+        await self._sendEvent(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
 
     async def driverSetupError(self, websocket, error="OTHER"):
         data = {"event_type": "STOP", "state": "ERROR", "error": error}
 
-        await self._sendEvent(
-            websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE
-        )
+        await self._sendEvent(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)

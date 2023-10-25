@@ -1,7 +1,6 @@
 import logging
 
-from ucapi.entity import TYPES
-from ucapi.entity import Entity
+from ucapi.entity import TYPES, Entity
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
@@ -9,53 +8,53 @@ LOG.setLevel(logging.DEBUG)
 
 
 class STATES:
-    UNAVAILABLE = 'UNAVAILABLE'
-    UNKNOWN = 'UNKNOWN'
-    OPENING = 'OPENING'
-    OPEN = 'OPEN'
-    CLOSING = 'CLOSING'
-    CLOSED = 'CLOSED'
+    UNAVAILABLE = "UNAVAILABLE"
+    UNKNOWN = "UNKNOWN"
+    OPENING = "OPENING"
+    OPEN = "OPEN"
+    CLOSING = "CLOSING"
+    CLOSED = "CLOSED"
 
 
 class FEATURES:
-    OPEN = 'open'
-    CLOSE = 'close'
-    STOP = 'stop'
-    POSITION = 'position'
-    TILT = 'tilt'
-    TILT_STOP = 'tilt_stop'
-    TILT_POSITION = 'tilt_position'
+    OPEN = "open"
+    CLOSE = "close"
+    STOP = "stop"
+    POSITION = "position"
+    TILT = "tilt"
+    TILT_STOP = "tilt_stop"
+    TILT_POSITION = "tilt_position"
 
 
 class ATTRIBUTES:
-    STATE = 'state'
-    POSITION = 'position'
-    TILT_POSITION = 'tilt_position'
+    STATE = "state"
+    POSITION = "position"
+    TILT_POSITION = "tilt_position"
 
 
 class COMMANDS:
-    OPEN = 'open'
-    CLOSE = 'close'
-    STOP = 'stop'
-    POSITION = 'position'
-    TILT = 'tilt'
-    TILT_UP = 'tilt_up'
-    TILT_DOWN = 'tilt_down'
-    TILT_STOP = 'tilt_stop'
+    OPEN = "open"
+    CLOSE = "close"
+    STOP = "stop"
+    POSITION = "position"
+    TILT = "tilt"
+    TILT_UP = "tilt_up"
+    TILT_DOWN = "tilt_down"
+    TILT_STOP = "tilt_stop"
 
 
 class DEVICECLASSES:
-    BLIND = 'blind'
-    CURTAIN = 'curtain'
-    GARAGE = 'garage'
-    SHADE = 'shade'
-    DOOR = 'door'
-    GATE = 'gate'
-    WINDOW = 'window'
+    BLIND = "blind"
+    CURTAIN = "curtain"
+    GARAGE = "garage"
+    SHADE = "shade"
+    DOOR = "door"
+    GATE = "gate"
+    WINDOW = "window"
 
 
 class OPTIONS:
-    ""
+    """"""
 
 
 class Cover(Entity):

@@ -1,7 +1,6 @@
 import logging
 
-from ucapi.entity import TYPES
-from ucapi.entity import Entity
+from ucapi.entity import TYPES, Entity
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
@@ -128,8 +127,9 @@ class MEDIA_TYPE:
     MOVIE = "MOVIE"
     VIDEO = "VIDEO"
 
+
 class MediaPlayer(Entity):
-    def __init__(self, id, name, features, attributes, deviceClass = None, options = None, area=None, type="default"):
+    def __init__(self, id, name, features, attributes, deviceClass=None, options=None, area=None, type="default"):
         super().__init__(
             id,
             name,
