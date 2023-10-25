@@ -1,3 +1,10 @@
+"""
+Integration driver API for Remote Two.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
 import asyncio
 import json
 import logging
@@ -10,7 +17,7 @@ from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 import ucapi.api_definitions as uc
-import ucapi.entities as entities
+from ucapi import entities
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
@@ -18,6 +25,8 @@ LOG.setLevel(logging.DEBUG)
 
 
 class IntegrationAPI:
+    """Integration API to communicate with Remote Two."""
+
     def __init__(self, loop, type="default"):
         self._loop = loop
         self.events = AsyncIOEventEmitter(self._loop)
@@ -56,9 +65,8 @@ class IntegrationAPI:
             await self._broadcastEvent(uc.MSG_EVENTS.ENTITY_CHANGE, data, uc.EVENT_CATEGORY.ENTITY)
 
         # Load driver config
-        file = open(self._driverPath)
-        self.driverInfo = json.load(file)
-        file.close()
+        with open(self._driverPath, "r", encoding="utf-8") as file:
+            self.driverInfo = json.load(file)
 
         # Set driver URL
         self.driverInfo["driver_url"] = self.getDriverUrl(
@@ -124,10 +132,10 @@ class IntegrationAPI:
     def _toLanguageObject(self, text):
         if text is None:
             return None
-        elif isinstance(text, str):
+        if isinstance(text, str):
             return {"en": text}
-        else:
-            return text
+
+        return text
 
     async def _startWebSocketServer(self):
         async with websockets.serve(self._handleWs, self._interface, int(self._port)):
@@ -173,7 +181,7 @@ class IntegrationAPI:
 
         if websocket in self._clients:
             dataDump = json.dumps(data)
-            LOG.debug("->: " + dataDump)
+            LOG.debug("->: %s", dataDump)
             await websocket.send(dataDump)
         else:
             LOG.error("Error sending response: connection no longer established")
@@ -183,7 +191,7 @@ class IntegrationAPI:
 
         for websocket in self._clients:
             dataDump = json.dumps(data)
-            LOG.debug("->: " + dataDump)
+            LOG.debug("->: %s", dataDump)
             await websocket.send(dataDump)
 
     async def _sendEvent(self, websocket, msg, msgData, category):
@@ -191,13 +199,13 @@ class IntegrationAPI:
 
         if websocket in self._clients:
             dataDump = json.dumps(data)
-            LOG.debug("->: " + dataDump)
+            LOG.debug("->: %s", dataDump)
             await websocket.send(dataDump)
         else:
             LOG.error("Error sending event: connection no longer established")
 
     async def _processWsMessage(self, websocket, message):
-        LOG.debug("<-: " + message)
+        LOG.debug("<-: %s", message)
 
         data = json.loads(message)
         kind = data["kind"]

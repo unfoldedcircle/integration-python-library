@@ -1,4 +1,12 @@
+"""
+Media-player entity definitions.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
 import logging
+from enum import Enum
 
 from ucapi.entity import TYPES, Entity
 
@@ -7,7 +15,9 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES:
+class STATES(Enum):
+    """Media-player entity states."""
+
     UNAVAILABLE = "UNAVAILABLE"
     UNKNOWN = "UNKNOWN"
     ON = "ON"
@@ -18,7 +28,9 @@ class STATES:
     BUFFERING = "BUFFERING"
 
 
-class FEATURES:
+class FEATURES(Enum):
+    """Media-player entity features."""
+
     ON_OFF = "on_off"
     TOGGLE = "toggle"
     VOLUME = "volume"
@@ -51,7 +63,9 @@ class FEATURES:
     SELECT_SOUND_MODE = "select_sound_mode"
 
 
-class ATTRIBUTES:
+class ATTRIBUTES(Enum):
+    """Media-player entity attributes."""
+
     STATE = "state"
     VOLUME = "volume"
     MUTED = "muted"
@@ -70,7 +84,9 @@ class ATTRIBUTES:
     SOUND_MODE_LIST = "sound_mode_list"
 
 
-class COMMANDS:
+class COMMANDS(Enum):
+    """Media-player entity commands."""
+
     ON = "on"
     OFF = "off"
     TOGGLE = "toggle"
@@ -108,7 +124,9 @@ class COMMANDS:
     SEARCH = "search"
 
 
-class DEVICECLASSES:
+class DEVICECLASSES(Enum):
+    """Media-player entity device classes."""
+
     RECEIVER = "receiver"
     SET_TOP_BOX = "set_top_box"
     SPEAKER = "speaker"
@@ -116,11 +134,15 @@ class DEVICECLASSES:
     TV = "tv"
 
 
-class OPTIONS:
+class OPTIONS(Enum):
+    """Media-player entity options."""
+
     VOLUME_STEPS = "volume_steps"
 
 
-class MEDIA_TYPE:
+class MEDIA_TYPE(Enum):
+    """Media types."""
+
     MUSIC = "MUSIC"
     RADIO = "RADIO"
     TVSHOW = "TVSHOW"
@@ -129,6 +151,13 @@ class MEDIA_TYPE:
 
 
 class MediaPlayer(Entity):
+    """
+    Media-player entity class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_media_player.md
+    for more information.
+    """
+
     def __init__(self, id, name, features, attributes, deviceClass=None, options=None, area=None, type="default"):
         super().__init__(
             id,

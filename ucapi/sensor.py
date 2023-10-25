@@ -1,4 +1,12 @@
+"""
+Sensor entity definitions.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
 import logging
+from enum import Enum
 
 from ucapi.entity import TYPES, Entity
 
@@ -7,27 +15,33 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES:
+class STATES(Enum):
+    """Sensor entity states."""
+
     UNAVAILABLE = "UNAVAILABLE"
     UNKNOWN = "UNKNOWN"
     ON = "ON"
 
 
-class FEATURES:
-    """"""
+class FEATURES(Enum):
+    """Sensor entity features."""
 
 
-class ATTRIBUTES:
+class ATTRIBUTES(Enum):
+    """Sensor entity attributes."""
+
     STATE = "state"
     VALUE = "value"
     UNIT = "unit"
 
 
-class COMMANDS:
-    """"""
+class COMMANDS(Enum):
+    """Sensor entity commands."""
 
 
-class DEVICECLASSES:
+class DEVICECLASSES(Enum):
+    """Sensor entity device classes."""
+
     CUSTOM = "custom"
     BATTERY = "battery"
     CURRENT = "current"
@@ -38,7 +52,9 @@ class DEVICECLASSES:
     VOLTAGE = "voltage"
 
 
-class OPTIONS:
+class OPTIONS(Enum):
+    """Sensor entity options."""
+
     CUSTOM_UNIT = "custom_unit"
     NATIVE_UNIT = "native_unit"
     DECIMALS = "decimals"
@@ -47,6 +63,13 @@ class OPTIONS:
 
 
 class Sensor(Entity):
+    """
+    Sensor entity class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_sensor.md
+    for more information.
+    """
+
     def __init__(
         self,
         id,

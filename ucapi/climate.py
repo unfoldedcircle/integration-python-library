@@ -1,4 +1,12 @@
+"""
+Climate entity definitions.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
 import logging
+from enum import Enum
 
 from ucapi.entity import TYPES, Entity
 
@@ -7,7 +15,9 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES:
+class STATES(Enum):
+    """Climate entity states."""
+
     UNAVAILABLE = "UNAVAILABLE"
     UNKNOWN = "UNKNOWN"
     OFF = "OFF"
@@ -18,7 +28,9 @@ class STATES:
     AUTO = "AUTO"
 
 
-class FEATURES:
+class FEATURES(Enum):
+    """Climate entity features."""
+
     ON_OFF = "on_off"
     HEAT = "heat"
     COOL = "cool"
@@ -28,7 +40,9 @@ class FEATURES:
     FAN = "fan"
 
 
-class ATTRIBUTES:
+class ATTRIBUTES(Enum):
+    """Climate entity attributes."""
+
     STATE = "state"
     CURRENT_TEMPERATURE = "current_temperature"
     TARGET_TEMPERATURE = "target_temperature"
@@ -37,7 +51,9 @@ class ATTRIBUTES:
     FAN_MODE = "fan_mode"
 
 
-class COMMANDS:
+class COMMANDS(Enum):
+    """Climate entity commands."""
+
     ON = "on"
     OFF = "off"
     HVAC_MODE = "hvac_mode"
@@ -46,11 +62,13 @@ class COMMANDS:
     FAN_MODE = "fan_mode"
 
 
-class DEVICECLASSES:
-    """"""
+class DEVICECLASSES(Enum):
+    """Climate entity device classes."""
 
 
-class OPTIONS:
+class OPTIONS(Enum):
+    """Climate entity options."""
+
     TEMPERATURE_UNIT = "temperature_unit"
     TARGET_TEMPERATURE_STEP = "target_temperature_step"
     MAX_TEMPERATURE = "max_temperature"
@@ -59,6 +77,13 @@ class OPTIONS:
 
 
 class Climate(Entity):
+    """
+    Climate entity class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_climate.md
+    for more information.
+    """
+
     def __init__(
         self,
         id,

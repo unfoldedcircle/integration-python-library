@@ -1,3 +1,10 @@
+"""
+Entity store.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
 import logging
 
 from pyee import AsyncIOEventEmitter
@@ -11,6 +18,8 @@ LOG.setLevel(logging.DEBUG)
 
 
 class Entities:
+    """Simple entity storage."""
+
     def __init__(self, id, loop, type="default"):
         self.id = id
         self._loop = loop
@@ -66,7 +75,7 @@ class Entities:
     def getEntities(self):
         entities = []
 
-        for entity in self._storage:
+        for entity in self._storage.items():
             res = {
                 "entity_id": self._storage[entity].id,
                 "entity_type": self._storage[entity].entityType,
@@ -84,7 +93,7 @@ class Entities:
     async def getStates(self):
         entities = []
 
-        for entity in self._storage:
+        for entity in self._storage.items():
             res = {
                 "entity_id": self._storage[entity].id,
                 "entity_type": self._storage[entity].entityType,

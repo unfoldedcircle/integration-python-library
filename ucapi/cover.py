@@ -1,4 +1,12 @@
+"""
+Cover entity definitions.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
 import logging
+from enum import Enum
 
 from ucapi.entity import TYPES, Entity
 
@@ -7,7 +15,9 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES:
+class STATES(Enum):
+    """Cover entity states."""
+
     UNAVAILABLE = "UNAVAILABLE"
     UNKNOWN = "UNKNOWN"
     OPENING = "OPENING"
@@ -16,7 +26,9 @@ class STATES:
     CLOSED = "CLOSED"
 
 
-class FEATURES:
+class FEATURES(Enum):
+    """Cover entity features."""
+
     OPEN = "open"
     CLOSE = "close"
     STOP = "stop"
@@ -26,13 +38,17 @@ class FEATURES:
     TILT_POSITION = "tilt_position"
 
 
-class ATTRIBUTES:
+class ATTRIBUTES(Enum):
+    """Cover entity attributes."""
+
     STATE = "state"
     POSITION = "position"
     TILT_POSITION = "tilt_position"
 
 
-class COMMANDS:
+class COMMANDS(Enum):
+    """Cover entity commands."""
+
     OPEN = "open"
     CLOSE = "close"
     STOP = "stop"
@@ -43,7 +59,9 @@ class COMMANDS:
     TILT_STOP = "tilt_stop"
 
 
-class DEVICECLASSES:
+class DEVICECLASSES(Enum):
+    """Cover entity device classes."""
+
     BLIND = "blind"
     CURTAIN = "curtain"
     GARAGE = "garage"
@@ -53,11 +71,18 @@ class DEVICECLASSES:
     WINDOW = "window"
 
 
-class OPTIONS:
-    """"""
+class OPTIONS(Enum):
+    """Cover entity options."""
 
 
 class Cover(Entity):
+    """
+    Cover entity class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_cover.md
+    for more information.
+    """
+
     def __init__(
         self,
         id,

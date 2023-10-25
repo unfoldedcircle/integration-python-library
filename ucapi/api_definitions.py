@@ -1,7 +1,16 @@
-from enum import IntEnum
+"""
+API definitions.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
+from enum import Enum, IntEnum
 
 
-class DEVICE_STATES:
+class DEVICE_STATES(Enum):
+    """Device states."""
+
     CONNECTED = "CONNECTED"
     CONNECTING = "CONNECTING"
     DISCONNECTED = "DISCONNECTED"
@@ -9,6 +18,8 @@ class DEVICE_STATES:
 
 
 class STATUS_CODES(IntEnum):
+    """Response status codes."""
+
     OK = 200
     BAD_REQUEST = 400
     UNAUTHORIZED = 401
@@ -17,7 +28,9 @@ class STATUS_CODES(IntEnum):
     SERVICE_UNAVAILABLE = 503
 
 
-class MESSAGES:
+class MESSAGES(Enum):
+    """Request messages from Remote Two."""
+
     AUTHENTICATION = "authentication"
     GET_DRIVER_VERSION = "get_driver_version"
     GET_DEVICE_STATE = "get_device_state"
@@ -31,7 +44,9 @@ class MESSAGES:
     SET_DRIVER_USER_DATA = "set_driver_user_data"
 
 
-class MSG_EVENTS:
+class MSG_EVENTS(Enum):
+    """Event messages from Remote Two."""
+
     CONNECT = "connect"
     DISCONNECT = "disconnect"
     ENTER_STANDBY = "enter_standby"
@@ -46,7 +61,9 @@ class MSG_EVENTS:
     ABORT_DRIVER_SETUP = "abort_driver_setup"
 
 
-class EVENTS:
+class EVENTS(Enum):
+    """Internal events."""
+
     ENTITY_COMMAND = "entity_command"
     ENTITY_ATTRIBUTES_UPDATED = "entity_attributes_updated"
     SUBSCRIBE_ENTITIES = "subscribe_entities"
@@ -61,6 +78,8 @@ class EVENTS:
     EXIT_STANDBY = "exit_standby"
 
 
-class EVENT_CATEGORY:
+class EVENT_CATEGORY(Enum):
+    """Event categories."""
+
     DEVICE = "DEVICE"
     ENTITY = "ENTITY"

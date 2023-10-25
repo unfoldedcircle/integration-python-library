@@ -8,6 +8,10 @@ fail-under=9.5
 fail-on=
     logging-fstring-interpolation,
     logging-not-lazy,
+    unspecified-encoding,
+    consider-using-from-import,
+    consider-using-with,
+    invalid-name
 
 [FORMAT]
 
@@ -29,6 +33,8 @@ max-line-length=120
 disable=
     too-many-instance-attributes,
     global-statement,
+    too-many-arguments,
+    unused-argument
 
 [STRING]
 

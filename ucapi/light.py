@@ -1,4 +1,12 @@
+"""
+Light entity definitions.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
 import logging
+from enum import Enum
 
 from ucapi.entity import TYPES, Entity
 
@@ -7,14 +15,18 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES:
+class STATES(Enum):
+    """Light entity states."""
+
     UNAVAILABLE = "UNAVAILABLE"
     UNKNOWN = "UNKNOWN"
     ON = "ON"
     OFF = "OFF"
 
 
-class FEATURES:
+class FEATURES(Enum):
+    """Light entity features."""
+
     ON_OFF = "on_off"
     TOGGLE = "toggle"
     DIM = "dim"
@@ -22,7 +34,9 @@ class FEATURES:
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class ATTRIBUTES:
+class ATTRIBUTES(Enum):
+    """Light entity attributes."""
+
     STATE = "state"
     HUE = "hue"
     SATURATION = "saturation"
@@ -30,21 +44,32 @@ class ATTRIBUTES:
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class COMMANDS:
+class COMMANDS(Enum):
+    """Light entity commands."""
+
     ON = "on"
     OFF = "off"
     TOGGLE = "toggle"
 
 
-class DEVICECLASSES:
-    """"""
+class DEVICECLASSES(Enum):
+    """Light entity device classes."""
 
 
-class OPTIONS:
+class OPTIONS(Enum):
+    """Light entity options."""
+
     COLOR_TEMPERATURE_STEPS = "color_temperature_steps"
 
 
 class Light(Entity):
+    """
+    Switch entity class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_light.md
+    for more information.
+    """
+
     def __init__(
         self,
         id,

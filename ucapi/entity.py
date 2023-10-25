@@ -1,4 +1,16 @@
-class TYPES:
+"""
+Entity definitions.
+
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
+from enum import Enum
+
+
+class TYPES(Enum):
+    """Entity types."""
+
     COVER = "cover"
     BUTTON = "button"
     CLIMATE = "climate"
@@ -9,6 +21,13 @@ class TYPES:
 
 
 class Entity:
+    """
+    Entity base class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/
+    for more information.
+    """
+
     def __init__(
         self,
         id,
