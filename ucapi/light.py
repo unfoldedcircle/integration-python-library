@@ -2,20 +2,20 @@
 Light entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 import logging
 from enum import Enum
 
-from ucapi.entity import TYPES, Entity
+from ucapi.entity import Entity, Types
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(str, Enum):
+class States(str, Enum):
     """Light entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -24,7 +24,7 @@ class STATES(str, Enum):
     OFF = "OFF"
 
 
-class FEATURES(str, Enum):
+class Features(str, Enum):
     """Light entity features."""
 
     ON_OFF = "on_off"
@@ -34,7 +34,7 @@ class FEATURES(str, Enum):
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class ATTRIBUTES(str, Enum):
+class Attributes(str, Enum):
     """Light entity attributes."""
 
     STATE = "state"
@@ -44,7 +44,7 @@ class ATTRIBUTES(str, Enum):
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class COMMANDS(str, Enum):
+class Commands(str, Enum):
     """Light entity commands."""
 
     ON = "on"
@@ -52,11 +52,11 @@ class COMMANDS(str, Enum):
     TOGGLE = "toggle"
 
 
-class DEVICECLASSES(str, Enum):
+class DeviceClasses(str, Enum):
     """Light entity device classes."""
 
 
-class OPTIONS(str, Enum):
+class Options(str, Enum):
     """Light entity options."""
 
     COLOR_TEMPERATURE_STEPS = "color_temperature_steps"
@@ -74,9 +74,9 @@ class Light(Entity):
         self,
         identifier: str,
         name: str | dict,
-        features: list[FEATURES],
+        features: list[Features],
         attributes: dict,
-        deviceClass: DEVICECLASSES | None = None,
+        device_class: DeviceClasses | None = None,
         options: dict | None = None,
         area: str | None = None,
     ):
@@ -87,17 +87,17 @@ class Light(Entity):
         :param name: friendly name
         :param features: light features
         :param attributes: light attributes
-        :param deviceClass: optional light device class
+        :param device_class: optional light device class
         :param options: options
         :param area: optional area
         """
         super().__init__(
             identifier,
             name,
-            TYPES.LIGHT,
+            Types.LIGHT,
             features,
             attributes,
-            deviceClass,
+            device_class,
             options,
             area,
         )

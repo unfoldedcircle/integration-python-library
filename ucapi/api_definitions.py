@@ -2,13 +2,13 @@
 API definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 from enum import Enum, IntEnum
 
 
-class DEVICE_STATES(str, Enum):
+class DeviceStates(str, Enum):
     """Device states."""
 
     CONNECTED = "CONNECTED"
@@ -17,7 +17,7 @@ class DEVICE_STATES(str, Enum):
     ERROR = "ERROR"
 
 
-class STATUS_CODES(IntEnum):
+class StatusCodes(IntEnum):
     """Response status codes."""
 
     OK = 200
@@ -28,8 +28,8 @@ class STATUS_CODES(IntEnum):
     SERVICE_UNAVAILABLE = 503
 
 
-class MESSAGES(str, Enum):
-    """Request messages from Remote Two."""
+class WsMessages(str, Enum):
+    """WebSocket request messages from Remote Two."""
 
     AUTHENTICATION = "authentication"
     GET_DRIVER_VERSION = "get_driver_version"
@@ -44,8 +44,8 @@ class MESSAGES(str, Enum):
     SET_DRIVER_USER_DATA = "set_driver_user_data"
 
 
-class MSG_EVENTS(str, Enum):
-    """Event messages from Remote Two."""
+class WsMsgEvents(str, Enum):
+    """WebSocket event messages from Remote Two."""
 
     CONNECT = "connect"
     DISCONNECT = "disconnect"
@@ -61,8 +61,8 @@ class MSG_EVENTS(str, Enum):
     ABORT_DRIVER_SETUP = "abort_driver_setup"
 
 
-class EVENTS(str, Enum):
-    """Internal events."""
+class Events(str, Enum):
+    """Internal library events."""
 
     ENTITY_COMMAND = "entity_command"
     ENTITY_ATTRIBUTES_UPDATED = "entity_attributes_updated"
@@ -78,7 +78,7 @@ class EVENTS(str, Enum):
     EXIT_STANDBY = "exit_standby"
 
 
-class EVENT_CATEGORY(str, Enum):
+class EventCategory(str, Enum):
     """Event categories."""
 
     DEVICE = "DEVICE"

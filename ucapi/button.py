@@ -2,33 +2,33 @@
 Button entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 import logging
 from enum import Enum
 
-from ucapi.entity import TYPES, Entity
+from ucapi.entity import Entity, Types
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(str, Enum):
+class States(str, Enum):
     """Button entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
     AVAILABLE = "AVAILABLE"
 
 
-class ATTRIBUTES(str, Enum):
+class Attributes(str, Enum):
     """Button entity attributes."""
 
     STATE = "state"
 
 
-class COMMANDS(str, Enum):
+class Commands(str, Enum):
     """Button entity commands."""
 
     PUSH = "push"
@@ -53,9 +53,9 @@ class Button(Entity):
         super().__init__(
             identifier,
             name,
-            TYPES.BUTTON,
+            Types.BUTTON,
             ["press"],
-            {ATTRIBUTES.STATE: STATES.AVAILABLE},
+            {Attributes.STATE: States.AVAILABLE},
             None,
             None,
             area,

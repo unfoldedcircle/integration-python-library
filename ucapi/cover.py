@@ -2,20 +2,20 @@
 Cover entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 import logging
 from enum import Enum
 
-from ucapi.entity import TYPES, Entity
+from ucapi.entity import Entity, Types
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(str, Enum):
+class States(str, Enum):
     """Cover entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -26,7 +26,7 @@ class STATES(str, Enum):
     CLOSED = "CLOSED"
 
 
-class FEATURES(str, Enum):
+class Features(str, Enum):
     """Cover entity features."""
 
     OPEN = "open"
@@ -38,7 +38,7 @@ class FEATURES(str, Enum):
     TILT_POSITION = "tilt_position"
 
 
-class ATTRIBUTES(str, Enum):
+class Attributes(str, Enum):
     """Cover entity attributes."""
 
     STATE = "state"
@@ -46,7 +46,7 @@ class ATTRIBUTES(str, Enum):
     TILT_POSITION = "tilt_position"
 
 
-class COMMANDS(str, Enum):
+class Commands(str, Enum):
     """Cover entity commands."""
 
     OPEN = "open"
@@ -59,7 +59,7 @@ class COMMANDS(str, Enum):
     TILT_STOP = "tilt_stop"
 
 
-class DEVICECLASSES(str, Enum):
+class DeviceClasses(str, Enum):
     """Cover entity device classes."""
 
     BLIND = "blind"
@@ -71,7 +71,7 @@ class DEVICECLASSES(str, Enum):
     WINDOW = "window"
 
 
-class OPTIONS(str, Enum):
+class Options(str, Enum):
     """Cover entity options."""
 
 
@@ -87,9 +87,9 @@ class Cover(Entity):
         self,
         identifier: str,
         name: str | dict,
-        features: list[FEATURES],
+        features: list[Features],
         attributes: dict,
-        deviceClass: DEVICECLASSES | None = None,
+        device_class: DeviceClasses | None = None,
         options: dict | None = None,
         area: str | None = None,
     ):
@@ -100,17 +100,17 @@ class Cover(Entity):
         :param name: friendly name
         :param features: cover features
         :param attributes: cover attributes
-        :param deviceClass: optional cover device class
+        :param device_class: optional cover device class
         :param options: options
         :param area: optional area
         """
         super().__init__(
             identifier,
             name,
-            TYPES.COVER,
+            Types.COVER,
             features,
             attributes,
-            deviceClass,
+            device_class,
             options,
             area,
         )

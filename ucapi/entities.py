@@ -2,7 +2,7 @@
 Entity store.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 import logging
@@ -10,7 +10,7 @@ from asyncio import AbstractEventLoop
 
 from pyee import AsyncIOEventEmitter
 
-from ucapi.api_definitions import EVENTS
+from ucapi.api_definitions import Events
 from ucapi.entity import Entity
 
 logging.basicConfig()
@@ -37,7 +37,7 @@ class Entities:
         """Check if storage contains an entity with given identifier."""
         return entity_id in self._storage
 
-    def getEntity(self, entity_id: str) -> Entity | None:
+    def get(self, entity_id: str) -> Entity | None:
         """Retrieve entity with given identifier."""
         if entity_id not in self._storage:
             LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
@@ -45,7 +45,7 @@ class Entities:
 
         return self._storage[entity_id]
 
-    def addEntity(self, entity: Entity) -> bool:
+    def add(self, entity: Entity) -> bool:
         """Add entity to storage."""
         if entity.id in self._storage:
             LOG.debug("ENTITIES(%s): Entity already exists with id: %s", self.id, entity.id)
@@ -55,7 +55,7 @@ class Entities:
         LOG.debug("ENTITIES(%s): Entity added with id: %s", self.id, entity.id)
         return True
 
-    def removeEntity(self, entity_id: str) -> bool:
+    def remove(self, entity_id: str) -> bool:
         """Remove entity from storage."""
         if entity_id not in self._storage:
             LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
@@ -65,27 +65,26 @@ class Entities:
         LOG.debug("ENTITIES(%s): Entity deleted with id: %s", self.id, entity_id)
         return True
 
-    def updateEntityAttributes(self, entity_id: str, attributes: dict) -> bool:
+    def update_attributes(self, entity_id: str, attributes: dict) -> bool:
         """Update entity attributes."""
         if entity_id not in self._storage:
             LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
-            # TODO why return True here?
-            return True
+            return False
 
         for key in attributes:
             self._storage[entity_id].attributes[key] = attributes[key]
 
         self.events.emit(
-            EVENTS.ENTITY_ATTRIBUTES_UPDATED,
+            Events.ENTITY_ATTRIBUTES_UPDATED,
             entity_id,
-            self._storage[entity_id].entityType,
+            self._storage[entity_id].entity_type,
             attributes,
         )
 
         LOG.debug("ENTITIES(%s): Entity attributes updated with id: %s", self.id, entity_id)
         return True
 
-    def getEntities(self) -> list[dict[str, any]]:
+    def get_all(self) -> list[dict[str, any]]:
         """
         Get all entity information in storage.
 
@@ -96,27 +95,27 @@ class Entities:
         for entity in self._storage.values():
             res = {
                 "entity_id": entity.id,
-                "entity_type": entity.entityType,
-                "device_id": entity.deviceId,
+                "entity_type": entity.entity_type,
+                "device_id": entity.device_id,
                 "features": entity.features,
                 "name": entity.name,
                 "area": entity.area,
-                "device_class": entity.deviceClass,
+                "device_class": entity.device_class,
             }
 
             entities.append(res)
 
         return entities
 
-    async def getStates(self) -> list[dict[str, any]]:
+    async def get_states(self) -> list[dict[str, any]]:
         """Get all entity information with entity_id, entity_type, device_id, attributes."""
         entities = []
 
         for entity in self._storage.values():
             res = {
                 "entity_id": entity.id,
-                "entity_type": entity.entityType,
-                "device_id": entity.deviceId,
+                "entity_type": entity.entity_type,
+                "device_id": entity.device_id,
                 "attributes": entity.attributes,
             }
 

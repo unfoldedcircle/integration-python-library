@@ -2,20 +2,20 @@
 Climate entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 import logging
 from enum import Enum
 
-from ucapi.entity import TYPES, Entity
+from ucapi.entity import Entity, Types
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(str, Enum):
+class States(str, Enum):
     """Climate entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -28,7 +28,7 @@ class STATES(str, Enum):
     AUTO = "AUTO"
 
 
-class FEATURES(str, Enum):
+class Features(str, Enum):
     """Climate entity features."""
 
     ON_OFF = "on_off"
@@ -40,7 +40,7 @@ class FEATURES(str, Enum):
     FAN = "fan"
 
 
-class ATTRIBUTES(str, Enum):
+class Attributes(str, Enum):
     """Climate entity attributes."""
 
     STATE = "state"
@@ -51,7 +51,7 @@ class ATTRIBUTES(str, Enum):
     FAN_MODE = "fan_mode"
 
 
-class COMMANDS(str, Enum):
+class Commands(str, Enum):
     """Climate entity commands."""
 
     ON = "on"
@@ -62,11 +62,11 @@ class COMMANDS(str, Enum):
     FAN_MODE = "fan_mode"
 
 
-class DEVICECLASSES(str, Enum):
+class DeviceClasses(str, Enum):
     """Climate entity device classes."""
 
 
-class OPTIONS(str, Enum):
+class Options(str, Enum):
     """Climate entity options."""
 
     TEMPERATURE_UNIT = "temperature_unit"
@@ -88,9 +88,9 @@ class Climate(Entity):
         self,
         identifier: str,
         name: str | dict,
-        features: list[FEATURES],
+        features: list[Features],
         attributes: dict,
-        deviceClass: str | None = None,
+        device_class: str | None = None,
         options: dict | None = None,
         area: str | None = None,
     ):
@@ -101,17 +101,17 @@ class Climate(Entity):
         :param name: friendly name
         :param features: climate features
         :param attributes: climate attributes
-        :param deviceClass: optional climate device class
+        :param device_class: optional climate device class
         :param options: options
         :param area: optional area
         """
         super().__init__(
             identifier,
             name,
-            TYPES.CLIMATE,
+            Types.CLIMATE,
             features,
             attributes,
-            deviceClass,
+            device_class,
             options,
             area,
         )

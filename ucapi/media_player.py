@@ -2,20 +2,20 @@
 Media-player entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 import logging
 from enum import Enum
 
-from ucapi.entity import TYPES, Entity
+from ucapi.entity import Entity, Types
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(str, Enum):
+class States(str, Enum):
     """Media-player entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -28,7 +28,7 @@ class STATES(str, Enum):
     BUFFERING = "BUFFERING"
 
 
-class FEATURES(str, Enum):
+class Features(str, Enum):
     """Media-player entity features."""
 
     ON_OFF = "on_off"
@@ -63,7 +63,7 @@ class FEATURES(str, Enum):
     SELECT_SOUND_MODE = "select_sound_mode"
 
 
-class ATTRIBUTES(str, Enum):
+class Attributes(str, Enum):
     """Media-player entity attributes."""
 
     STATE = "state"
@@ -84,7 +84,7 @@ class ATTRIBUTES(str, Enum):
     SOUND_MODE_LIST = "sound_mode_list"
 
 
-class COMMANDS(str, Enum):
+class Commands(str, Enum):
     """Media-player entity commands."""
 
     ON = "on"
@@ -124,7 +124,7 @@ class COMMANDS(str, Enum):
     SEARCH = "search"
 
 
-class DEVICECLASSES(str, Enum):
+class DeviceClasses(str, Enum):
     """Media-player entity device classes."""
 
     RECEIVER = "receiver"
@@ -134,13 +134,13 @@ class DEVICECLASSES(str, Enum):
     TV = "tv"
 
 
-class OPTIONS(str, Enum):
+class Options(str, Enum):
     """Media-player entity options."""
 
     VOLUME_STEPS = "volume_steps"
 
 
-class MEDIA_TYPE(str, Enum):
+class MediaType(str, Enum):
     """Media types."""
 
     MUSIC = "MUSIC"
@@ -162,9 +162,9 @@ class MediaPlayer(Entity):
         self,
         identifier: str,
         name: str | dict,
-        features: set[FEATURES],
+        features: set[Features],
         attributes: dict,
-        deviceClass: DEVICECLASSES | None = None,
+        device_class: DeviceClasses | None = None,
         options: dict | None = None,
         area: str | None = None,
     ):
@@ -175,17 +175,17 @@ class MediaPlayer(Entity):
         :param name: friendly name
         :param features: media-player features
         :param attributes: media-player attributes
-        :param deviceClass: optional media-player device class
+        :param device_class: optional media-player device class
         :param options: options
         :param area: optional area
         """
         super().__init__(
             identifier,
             name,
-            TYPES.MEDIA_PLAYER,
+            Types.MEDIA_PLAYER,
             features,
             attributes,
-            deviceClass,
+            device_class,
             options,
             area,
         )

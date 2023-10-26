@@ -2,7 +2,7 @@
 Integration driver API for Remote Two.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 import asyncio
@@ -11,6 +11,7 @@ import logging
 import os
 import socket
 from asyncio import AbstractEventLoop
+from typing import Any
 
 import websockets
 from pyee import AsyncIOEventEmitter
@@ -36,36 +37,36 @@ class IntegrationAPI:
         """
         self._loop = loop
         self.events = AsyncIOEventEmitter(self._loop)
-        self.driverInfo = {}
-        self._driver_path = None
-        self.state = uc.DEVICE_STATES.DISCONNECTED
+        self.driver_info = {}
+        self._driver_path: str | None = None
+        self.state: uc.DeviceStates = uc.DeviceStates.DISCONNECTED
         self._server_task = None
         self._clients = set()
 
         self._interface = os.getenv("UC_INTEGRATION_INTERFACE")
         self._port = os.getenv("UC_INTEGRATION_HTTP_PORT")
         # TODO: add support for secured
-        self._https_enabled = os.getenv("UC_INTEGRATION_HTTPS_ENABLED", "False").lower() in ("true", "1", "t")
-        self._disable_mdns_publish = os.getenv("UC_DISABLE_MDNS_PUBLISH", "False").lower() in ("true", "1", "t")
+        self._https_enabled = os.getenv("UC_INTEGRATION_HTTPS_ENABLED", "false").lower() in ("true", "1")
+        self._disable_mdns_publish = os.getenv("UC_DISABLE_MDNS_PUBLISH", "false").lower() in ("true", "1")
 
-        self.configDirPath = os.getenv("UC_CONFIG_HOME")
+        self.config_dir_path = os.getenv("UC_CONFIG_HOME")
 
-        self.availableEntities = entities.Entities("available", self._loop)
-        self.configuredEntities = entities.Entities("configured", self._loop)
+        self.available_entities = entities.Entities("available", self._loop)
+        self.configured_entities = entities.Entities("configured", self._loop)
 
         # Setup event loop
         asyncio.set_event_loop(self._loop)
 
-    async def init(self, driver_path):
+    async def init(self, driver_path: str):
         """
         Load driver configuration and start integration-API WebSocket server.
 
         :param driver_path: path to configuration file
         """
         self._driver_path = driver_path
-        self._port = self.driverInfo["port"] if "port" in self.driverInfo else self._port
+        self._port = self.driver_info["port"] if "port" in self.driver_info else self._port
 
-        @self.configuredEntities.events.on(uc.EVENTS.ENTITY_ATTRIBUTES_UPDATED)
+        @self.configured_entities.events.on(uc.Events.ENTITY_ATTRIBUTES_UPDATED)
         async def event_handler(entity_id, entity_type, attributes):
             data = {
                 "entity_id": entity_id,
@@ -73,37 +74,37 @@ class IntegrationAPI:
                 "attributes": attributes,
             }
 
-            await self._broadcast_event(uc.MSG_EVENTS.ENTITY_CHANGE, data, uc.EVENT_CATEGORY.ENTITY)
+            await self._broadcast_event(uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY)
 
         # Load driver config
         with open(self._driver_path, "r", encoding="utf-8") as file:
-            self.driverInfo = json.load(file)
+            self.driver_info = json.load(file)
 
         # Set driver URL
         # TODO verify _get_driver_url: logic might not be correct,
         #      move all parameter logic inside method to better understand what this does
-        self.driverInfo["driver_url"] = self._get_driver_url(
-            self.driverInfo["driver_url"] if "driver_url" in self.driverInfo else self._interface, self._port
+        self.driver_info["driver_url"] = self._get_driver_url(
+            self.driver_info["driver_url"] if "driver_url" in self.driver_info else self._interface, self._port
         )
 
         # Set driver name
-        name = _get_default_language_string(self.driverInfo["name"], "Unknown driver")
+        name = _get_default_language_string(self.driver_info["name"], "Unknown driver")
         # TODO there seems to be missing something with `url`
         # url = self._interface
 
-        addr = socket.gethostbyname(socket.gethostname()) if self.driverInfo["driver_url"] is None else self._interface
+        addr = socket.gethostbyname(socket.gethostname()) if self.driver_info["driver_url"] is None else self._interface
 
         if self._disable_mdns_publish is False:
             # Setup zeroconf service info
             info = AsyncServiceInfo(
                 "_uc-integration._tcp.local.",
-                f"{self.driverInfo['driver_id']}._uc-integration._tcp.local.",
+                f"{self.driver_info['driver_id']}._uc-integration._tcp.local.",
                 addresses=[addr],
                 port=int(self._port),
                 properties={
                     "name": name,
-                    "ver": self.driverInfo["version"],
-                    "developer": self.driverInfo["developer"]["name"],
+                    "ver": self.driver_info["version"],
+                    "developer": self.driver_info["developer"]["name"],
                 },
             )
             zeroconf = AsyncZeroconf(ip_version=IPVersion.V4Only)
@@ -113,9 +114,9 @@ class IntegrationAPI:
 
         LOG.info(
             "Driver is up: %s, version: %s, listening on: %s",
-            self.driverInfo["driver_id"],
-            self.driverInfo["version"],
-            self.driverInfo["driver_url"],
+            self.driver_info["driver_id"],
+            self.driver_info["version"],
+            self.driver_info["driver_url"],
         )
 
     def _get_driver_url(self, driver_url: str | None, port: int | str) -> str | None:
@@ -152,21 +153,25 @@ class IntegrationAPI:
         finally:
             self._clients.remove(websocket)
             LOG.info("WS: Client removed")
-            self.events.emit(uc.EVENTS.DISCONNECT)
+            self.events.emit(uc.Events.DISCONNECT)
 
-    async def _send_ok_result(self, websocket, req_id, msg_data={}):
+    async def _send_ok_result(self, websocket, req_id: str, msg_data: dict[str, Any] | None = None) -> None:
         await self._send_response(websocket, req_id, "result", msg_data, 200)
 
-    async def _send_error_result(self, websocket, req_id, status_code=500, msg_data={}):
+    async def _send_error_result(
+        self, websocket, req_id: int, status_code=500, msg_data: dict[str, Any] | None = None
+    ) -> None:
         await self._send_response(websocket, req_id, "result", msg_data, status_code)
 
-    async def _send_response(self, websocket, req_id, msg, msg_data, status_code=uc.STATUS_CODES.OK):
+    async def _send_response(
+        self, websocket, req_id: int, msg: str, msg_data: dict[str, Any] | None, status_code=uc.StatusCodes.OK
+    ) -> None:
         data = {
             "kind": "resp",
             "req_id": req_id,
             "code": int(status_code),
             "msg": msg,
-            "msg_data": msg_data,
+            "msg_data": msg_data if msg_data is not None else {},
         }
 
         if websocket in self._clients:
@@ -176,7 +181,7 @@ class IntegrationAPI:
         else:
             LOG.error("Error sending response: connection no longer established")
 
-    async def _broadcast_event(self, msg, msg_data, category):
+    async def _broadcast_event(self, msg: str, msg_data: dict[str, Any], category: str):
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
 
         for websocket in self._clients:
@@ -184,7 +189,7 @@ class IntegrationAPI:
             LOG.debug("->: %s", data_dump)
             await websocket.send(data_dump)
 
-    async def _send_event(self, websocket, msg, msg_data, category):
+    async def _send_event(self, websocket, msg: str, msg_data: dict[str, Any], category: str):
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
 
         if websocket in self._clients:
@@ -194,7 +199,7 @@ class IntegrationAPI:
         else:
             LOG.error("Error sending event: connection no longer established")
 
-    async def _process_ws_message(self, websocket, message):
+    async def _process_ws_message(self, websocket, message) -> None:
         LOG.debug("<-: %s", message)
 
         data = json.loads(message)
@@ -204,103 +209,123 @@ class IntegrationAPI:
         msg_data = data["msg_data"] if "msg_data" in data else None
 
         if kind == "req":
-            if msg == uc.MESSAGES.GET_DRIVER_VERSION:
-                await self._send_response(websocket, req_id, uc.MSG_EVENTS.DRIVER_VERSION, self.getDriverVersion())
-            elif msg == uc.MESSAGES.GET_DEVICE_STATE:
-                await self._send_response(websocket, req_id, uc.MSG_EVENTS.DEVICE_STATE, self.state)
-            elif msg == uc.MESSAGES.GET_AVAILABLE_ENTITIES:
-                available_entities = self.availableEntities.getEntities()
-                await self._send_response(
-                    websocket,
-                    req_id,
-                    uc.MSG_EVENTS.AVAILABLE_ENTITIES,
-                    {"available_entities": available_entities},
-                )
-            elif msg == uc.MESSAGES.GET_ENTITY_STATES:
-                entity_states = await self.configuredEntities.getStates()
-                await self._send_response(
-                    websocket,
-                    req_id,
-                    uc.MSG_EVENTS.ENTITY_STATES,
-                    entity_states,
-                )
-            elif msg == uc.MESSAGES.ENTITY_COMMAND:
-                await self._entity_command(websocket, req_id, msg_data)
-            elif msg == uc.MESSAGES.SUBSCRIBE_EVENTS:
-                await self._subscribe_events(msg_data)
-                await self._send_ok_result(websocket, req_id)
-            elif msg == uc.MESSAGES.UNSUBSCRIBE_EVENTS:
-                await self._unsubscribe_events(msg_data)
-                await self._send_ok_result(websocket, req_id)
-            elif msg == uc.MESSAGES.GET_DRIVER_METADATA:
-                await self._send_response(websocket, req_id, uc.MSG_EVENTS.DRIVER_METADATA, self.driverInfo)
-            elif msg == uc.MESSAGES.SETUP_DRIVER:
-                await self._setup_driver(websocket, req_id, msg_data)
-            elif msg == uc.MESSAGES.SET_DRIVER_USER_DATA:
-                await self._set_driver_user_data(websocket, req_id, msg_data)
-
+            if req_id is None:
+                LOG.warning("Ignoring request message with missing 'req_id': %s", message)
+            else:
+                await self._handle_ws_request_msg(websocket, msg, req_id, msg_data)
         elif kind == "event":
-            if msg == uc.MSG_EVENTS.CONNECT:
-                self.events.emit(uc.EVENTS.CONNECT)
-            elif msg == uc.MSG_EVENTS.DISCONNECT:
-                self.events.emit(uc.EVENTS.DISCONNECT)
-            elif msg == uc.MSG_EVENTS.ENTER_STANDBY:
-                self.events.emit(uc.EVENTS.ENTER_STANDBY)
-            elif msg == uc.MSG_EVENTS.EXIT_STANDBY:
-                self.events.emit(uc.EVENTS.EXIT_STANDBY)
-            elif msg == uc.MSG_EVENTS.ABORT_DRIVER_SETUP:
-                self.events.emit(uc.EVENTS.SETUP_DRIVER_ABORT)
+            self._handle_ws_event_msg(msg, msg_data)
 
-    async def _authenticate(self, websocket, success):
+    async def _handle_ws_request_msg(self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None) -> None:
+        if msg == uc.WsMessages.GET_DRIVER_VERSION:
+            await self._send_response(websocket, req_id, uc.WsMsgEvents.DRIVER_VERSION, self.get_driver_version())
+        elif msg == uc.WsMessages.GET_DEVICE_STATE:
+            await self._send_response(websocket, req_id, uc.WsMsgEvents.DEVICE_STATE, self.state)
+        elif msg == uc.WsMessages.GET_AVAILABLE_ENTITIES:
+            available_entities = self.available_entities.get_all()
+            await self._send_response(
+                websocket,
+                req_id,
+                uc.WsMsgEvents.AVAILABLE_ENTITIES,
+                {"available_entities": available_entities},
+            )
+        elif msg == uc.WsMessages.GET_ENTITY_STATES:
+            entity_states = await self.configured_entities.get_states()
+            await self._send_response(
+                websocket,
+                req_id,
+                uc.WsMsgEvents.ENTITY_STATES,
+                entity_states,
+            )
+        elif msg == uc.WsMessages.ENTITY_COMMAND:
+            await self._entity_command(websocket, req_id, msg_data)
+        elif msg == uc.WsMessages.SUBSCRIBE_EVENTS:
+            await self._subscribe_events(msg_data)
+            await self._send_ok_result(websocket, req_id)
+        elif msg == uc.WsMessages.UNSUBSCRIBE_EVENTS:
+            await self._unsubscribe_events(msg_data)
+            await self._send_ok_result(websocket, req_id)
+        elif msg == uc.WsMessages.GET_DRIVER_METADATA:
+            await self._send_response(websocket, req_id, uc.WsMsgEvents.DRIVER_METADATA, self.driver_info)
+        elif msg == uc.WsMessages.SETUP_DRIVER:
+            await self._setup_driver(websocket, req_id, msg_data)
+        elif msg == uc.WsMessages.SET_DRIVER_USER_DATA:
+            await self._set_driver_user_data(websocket, req_id, msg_data)
+
+    def _handle_ws_event_msg(self, msg: str, _msg_data: dict[str, Any] | None) -> None:
+        if msg == uc.WsMsgEvents.CONNECT:
+            self.events.emit(uc.Events.CONNECT)
+        elif msg == uc.WsMsgEvents.DISCONNECT:
+            self.events.emit(uc.Events.DISCONNECT)
+        elif msg == uc.WsMsgEvents.ENTER_STANDBY:
+            self.events.emit(uc.Events.ENTER_STANDBY)
+        elif msg == uc.WsMsgEvents.EXIT_STANDBY:
+            self.events.emit(uc.Events.EXIT_STANDBY)
+        elif msg == uc.WsMsgEvents.ABORT_DRIVER_SETUP:
+            self.events.emit(uc.Events.SETUP_DRIVER_ABORT)
+
+    async def _authenticate(self, websocket, success: bool):
         await self._send_response(
             websocket,
             0,
-            uc.MESSAGES.AUTHENTICATION,
+            uc.WsMessages.AUTHENTICATION,
             {},
-            uc.STATUS_CODES.OK if success else uc.STATUS_CODES.UNAUTHORIZED,
+            uc.StatusCodes.OK if success else uc.StatusCodes.UNAUTHORIZED,
         )
 
-    def getDriverVersion(self):
+    def get_driver_version(self) -> dict[str, dict[str, Any]]:
+        """Get driver version information."""
         return {
-            "name": self.driverInfo["name"]["en"],
+            "name": self.driver_info["name"]["en"],
             "version": {
-                "api": self.driverInfo["min_core_api"],
-                "driver": self.driverInfo["version"],
+                "api": self.driver_info["min_core_api"],
+                "driver": self.driver_info["version"],
             },
         }
 
-    async def setDeviceState(self, state):
+    async def set_device_state(self, state: uc.DeviceStates) -> None:
+        """Set new state."""
         self.state = state
 
-        await self._broadcast_event(uc.MSG_EVENTS.DEVICE_STATE, {"state": self.state}, uc.EVENT_CATEGORY.DEVICE)
+        await self._broadcast_event(uc.WsMsgEvents.DEVICE_STATE, {"state": self.state}, uc.EventCategory.DEVICE)
 
-    async def _subscribe_events(self, subscribe):
-        for entityId in subscribe["entity_ids"]:
-            entity = self.availableEntities.getEntity(entityId)
+    async def _subscribe_events(self, msg_data: dict[str, Any] | None) -> None:
+        if msg_data is None:
+            LOG.warning("Ignoring _subscribe_events: called with empty msg_data")
+            return
+        for entity_id in msg_data["entity_ids"]:
+            entity = self.available_entities.get(entity_id)
             if entity is not None:
-                self.configuredEntities.addEntity(entity)
+                self.configured_entities.add(entity)
             else:
                 LOG.warning(
                     "WARN: cannot subscribe entity %s: entity is not available",
-                    entityId,
+                    entity_id,
                 )
 
-        self.events.emit(uc.EVENTS.SUBSCRIBE_ENTITIES, subscribe["entity_ids"])
+        self.events.emit(uc.Events.SUBSCRIBE_ENTITIES, msg_data["entity_ids"])
 
-    async def _unsubscribe_events(self, unsubscribe):
+    async def _unsubscribe_events(self, msg_data: dict[str, Any] | None) -> bool:
+        if msg_data is None:
+            LOG.warning("Ignoring _unsubscribe_events: called with empty msg_data")
+            return False
+
         res = True
 
-        for entityId in unsubscribe["entity_ids"]:
-            if self.configuredEntities.removeEntity(entityId) is False:
+        for entity_id in msg_data["entity_ids"]:
+            if self.configured_entities.remove(entity_id) is False:
                 res = False
 
-        self.events.emit(uc.EVENTS.UNSUBSCRIBE_ENTITIES, unsubscribe["entity_ids"])
+        self.events.emit(uc.Events.UNSUBSCRIBE_ENTITIES, msg_data["entity_ids"])
 
         return res
 
-    async def _entity_command(self, websocket, req_id, msg_data):
+    async def _entity_command(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> None:
+        if msg_data is None:
+            LOG.warning("Ignoring _entity_command: called with empty msg_data")
+            return
         self.events.emit(
-            uc.EVENTS.ENTITY_COMMAND,
+            uc.Events.ENTITY_COMMAND,
             websocket,
             req_id,
             msg_data["entity_id"],
@@ -309,26 +334,32 @@ class IntegrationAPI:
             msg_data["params"] if "params" in msg_data else None,
         )
 
-    async def _setup_driver(self, websocket, req_id, data):
-        self.events.emit(uc.EVENTS.SETUP_DRIVER, websocket, req_id, data["setup_data"])
+    async def _setup_driver(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> None:
+        if msg_data is None:
+            LOG.warning("Ignoring _setup_driver: called with empty msg_data")
+            return
+        self.events.emit(uc.Events.SETUP_DRIVER, websocket, req_id, msg_data["setup_data"])
 
-    async def _set_driver_user_data(self, websocket, req_id, data):
-        if "input_values" in data:
-            self.events.emit(uc.EVENTS.SETUP_DRIVER_USER_DATA, websocket, req_id, data["input_values"])
-        elif "confirm" in data:
-            self.events.emit(uc.EVENTS.SETUP_DRIVER_USER_CONFIRMATION, websocket, req_id, data=None)
+    async def _set_driver_user_data(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> None:
+        if "input_values" in msg_data:
+            self.events.emit(uc.Events.SETUP_DRIVER_USER_DATA, websocket, req_id, msg_data["input_values"])
+        elif "confirm" in msg_data:
+            self.events.emit(uc.Events.SETUP_DRIVER_USER_CONFIRMATION, websocket, req_id, data=None)
         else:
             LOG.warning("Unsupported set_driver_user_data payload received")
 
-    async def acknowledgeCommand(self, websocket, req_id, status_code=uc.STATUS_CODES.OK):
+    async def acknowledge_command(self, websocket, req_id: int, status_code=uc.StatusCodes.OK) -> None:
+        """Acknowledge a command from Remote Two."""
         await self._send_response(websocket, req_id, "result", {}, status_code)
 
-    async def driverSetupProgress(self, websocket):
+    async def driver_setup_progress(self, websocket) -> None:
+        """Send a driver setup progress event to Remote Two."""
         data = {"event_type": "SETUP", "state": "SETUP"}
 
-        await self._send_event(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
+        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
-    async def requestDriverSetupUserConfirmation(self, websocket, title, msg1=None, image=None, msg2=None):
+    async def request_driver_setup_user_confirmation(self, websocket, title, msg1=None, image=None, msg2=None) -> None:
+        """Request a user confirmation during the driver setup process."""
         data = {
             "event_type": "SETUP",
             "state": "WAIT_USER_ACTION",
@@ -342,29 +373,32 @@ class IntegrationAPI:
             },
         }
 
-        await self._send_event(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
+        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
-    async def requestDriverSetupUserInput(self, websocket, title, settings):
+    async def request_driver_setup_user_input(self, websocket, title, settings: dict[str, Any]) -> None:
+        """Request a user input during the driver setup process."""
         data = {
             "event_type": "SETUP",
             "state": "WAIT_USER_ACTION",
             "require_user_action": {"input": {"title": _to_language_object(title), "settings": settings}},
         }
 
-        await self._send_event(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
+        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
-    async def driverSetupComplete(self, websocket):
+    async def driver_setup_complete(self, websocket) -> None:
+        """Send a driver setup complete event to Remote Two."""
         data = {"event_type": "STOP", "state": "OK"}
 
-        await self._send_event(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
+        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
-    async def driverSetupError(self, websocket, error="OTHER"):
+    async def driver_setup_error(self, websocket, error="OTHER") -> None:
+        """Send a driver setup error event to Remote Two."""
         data = {"event_type": "STOP", "state": "ERROR", "error": error}
 
-        await self._send_event(websocket, uc.MSG_EVENTS.DRIVER_SETUP_CHANGE, data, uc.EVENT_CATEGORY.DEVICE)
+        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
 
-def _to_language_object(text):
+def _to_language_object(text: str | dict[str, str] | None):
     if text is None:
         return None
     if isinstance(text, str):
@@ -373,7 +407,7 @@ def _to_language_object(text):
     return text
 
 
-def _get_default_language_string(text, default_text="Undefined"):
+def _get_default_language_string(text: str | dict[str, str] | None, default_text="Undefined") -> str:
     if text is None:
         return default_text
 
@@ -384,7 +418,7 @@ def _get_default_language_string(text, default_text="Undefined"):
         if index == 0:
             default_text = value
 
-        if key.startswith("en-"):
+        if key.startswith("en_"):
             return text[key]
 
     return default_text

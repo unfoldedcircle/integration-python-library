@@ -2,13 +2,13 @@
 Entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
 from enum import Enum
 
 
-class TYPES(str, Enum):
+class Types(str, Enum):
     """Entity types."""
 
     COVER = "cover"
@@ -32,7 +32,7 @@ class Entity:
         self,
         identifier: str,
         name: str | dict,
-        entity_type: TYPES,
+        entity_type: Types,
         features: list[str],
         attributes: dict,
         device_class: str | None,
@@ -53,10 +53,10 @@ class Entity:
         """
         self.id = identifier
         self.name = {"en": name} if isinstance(name, str) else name
-        self.entityType = entity_type
-        self.deviceId = None
+        self.entity_type = entity_type
+        self.device_id = None
         self.features = features
         self.attributes = attributes
-        self.deviceClass = device_class
+        self.device_class = device_class
         self.options = options
         self.area = area
