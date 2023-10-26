@@ -93,15 +93,15 @@ class Entities:
         """
         entities = []
 
-        for entity in self._storage.items():
+        for entity in self._storage.values():
             res = {
-                "entity_id": self._storage[entity].id,
-                "entity_type": self._storage[entity].entityType,
-                "device_id": self._storage[entity].deviceId,
-                "features": self._storage[entity].features,
-                "name": self._storage[entity].name,
-                "area": self._storage[entity].area,
-                "device_class": self._storage[entity].deviceClass,
+                "entity_id": entity.id,
+                "entity_type": entity.entityType,
+                "device_id": entity.deviceId,
+                "features": entity.features,
+                "name": entity.name,
+                "area": entity.area,
+                "device_class": entity.deviceClass,
             }
 
             entities.append(res)
@@ -112,12 +112,12 @@ class Entities:
         """Get all entity information with entity_id, entity_type, device_id, attributes."""
         entities = []
 
-        for entity in self._storage.items():
+        for entity in self._storage.values():
             res = {
-                "entity_id": self._storage[entity].id,
-                "entity_type": self._storage[entity].entityType,
-                "device_id": self._storage[entity].deviceId,
-                "attributes": self._storage[entity].attributes,
+                "entity_id": entity.id,
+                "entity_type": entity.entityType,
+                "device_id": entity.deviceId,
+                "attributes": entity.attributes,
             }
 
             entities.append(res)

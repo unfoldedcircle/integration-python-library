@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(Enum):
+class STATES(str, Enum):
     """Light entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -24,7 +24,7 @@ class STATES(Enum):
     OFF = "OFF"
 
 
-class FEATURES(Enum):
+class FEATURES(str, Enum):
     """Light entity features."""
 
     ON_OFF = "on_off"
@@ -34,7 +34,7 @@ class FEATURES(Enum):
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class ATTRIBUTES(Enum):
+class ATTRIBUTES(str, Enum):
     """Light entity attributes."""
 
     STATE = "state"
@@ -44,7 +44,7 @@ class ATTRIBUTES(Enum):
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class COMMANDS(Enum):
+class COMMANDS(str, Enum):
     """Light entity commands."""
 
     ON = "on"
@@ -52,11 +52,11 @@ class COMMANDS(Enum):
     TOGGLE = "toggle"
 
 
-class DEVICECLASSES(Enum):
+class DEVICECLASSES(str, Enum):
     """Light entity device classes."""
 
 
-class OPTIONS(Enum):
+class OPTIONS(str, Enum):
     """Light entity options."""
 
     COLOR_TEMPERATURE_STEPS = "color_temperature_steps"

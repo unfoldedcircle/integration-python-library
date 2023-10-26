@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(Enum):
+class STATES(str, Enum):
     """Switch entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -24,20 +24,20 @@ class STATES(Enum):
     OFF = "OFF"
 
 
-class FEATURES(Enum):
+class FEATURES(str, Enum):
     """Switch entity features."""
 
     ON_OFF = "on_off"
     TOGGLE = "toggle"
 
 
-class ATTRIBUTES(Enum):
+class ATTRIBUTES(str, Enum):
     """Switch entity attributes."""
 
     STATE = "state"
 
 
-class COMMANDS(Enum):
+class COMMANDS(str, Enum):
     """Switch entity commands."""
 
     ON = "on"
@@ -45,14 +45,14 @@ class COMMANDS(Enum):
     TOGGLE = "toggle"
 
 
-class DEVICECLASSES(Enum):
+class DEVICECLASSES(str, Enum):
     """Switch entity device classes."""
 
     OUTLET = "outlet"
     SWITCH = "switch"
 
 
-class OPTIONS(Enum):
+class OPTIONS(str, Enum):
     """Switch entity options."""
 
     READABLE = "readable"

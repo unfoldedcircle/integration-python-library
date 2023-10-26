@@ -1,3 +1,5 @@
+# TODO remove and use pyproject.toml: https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html
+
 from setuptools import setup, find_packages
 
 from codecs import open
@@ -17,7 +19,7 @@ setup(
     url="https://unfoldedcircle.com",
     author="Unfolded Circle ApS",
     author_email="hello@unfoldedcircle.com",
-    license="MIT",
+    license="MPL-2.0",
     packages=["ucapi"],
     include_package_data=True,
     install_requires=find_packages(),

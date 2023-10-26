@@ -8,7 +8,7 @@ Entity definitions.
 from enum import Enum
 
 
-class TYPES(Enum):
+class TYPES(str, Enum):
     """Entity types."""
 
     COVER = "cover"

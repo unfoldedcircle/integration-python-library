@@ -15,20 +15,20 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(Enum):
+class STATES(str, Enum):
     """Button entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
     AVAILABLE = "AVAILABLE"
 
 
-class ATTRIBUTES(Enum):
+class ATTRIBUTES(str, Enum):
     """Button entity attributes."""
 
     STATE = "state"
 
 
-class COMMANDS(Enum):
+class COMMANDS(str, Enum):
     """Button entity commands."""
 
     PUSH = "push"

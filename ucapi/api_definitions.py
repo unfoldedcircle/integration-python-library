@@ -8,7 +8,7 @@ API definitions.
 from enum import Enum, IntEnum
 
 
-class DEVICE_STATES(Enum):
+class DEVICE_STATES(str, Enum):
     """Device states."""
 
     CONNECTED = "CONNECTED"
@@ -28,7 +28,7 @@ class STATUS_CODES(IntEnum):
     SERVICE_UNAVAILABLE = 503
 
 
-class MESSAGES(Enum):
+class MESSAGES(str, Enum):
     """Request messages from Remote Two."""
 
     AUTHENTICATION = "authentication"
@@ -44,7 +44,7 @@ class MESSAGES(Enum):
     SET_DRIVER_USER_DATA = "set_driver_user_data"
 
 
-class MSG_EVENTS(Enum):
+class MSG_EVENTS(str, Enum):
     """Event messages from Remote Two."""
 
     CONNECT = "connect"
@@ -61,7 +61,7 @@ class MSG_EVENTS(Enum):
     ABORT_DRIVER_SETUP = "abort_driver_setup"
 
 
-class EVENTS(Enum):
+class EVENTS(str, Enum):
     """Internal events."""
 
     ENTITY_COMMAND = "entity_command"
@@ -78,7 +78,7 @@ class EVENTS(Enum):
     EXIT_STANDBY = "exit_standby"
 
 
-class EVENT_CATEGORY(Enum):
+class EVENT_CATEGORY(str, Enum):
     """Event categories."""
 
     DEVICE = "DEVICE"

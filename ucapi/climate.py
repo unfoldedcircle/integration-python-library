@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(Enum):
+class STATES(str, Enum):
     """Climate entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -28,7 +28,7 @@ class STATES(Enum):
     AUTO = "AUTO"
 
 
-class FEATURES(Enum):
+class FEATURES(str, Enum):
     """Climate entity features."""
 
     ON_OFF = "on_off"
@@ -40,7 +40,7 @@ class FEATURES(Enum):
     FAN = "fan"
 
 
-class ATTRIBUTES(Enum):
+class ATTRIBUTES(str, Enum):
     """Climate entity attributes."""
 
     STATE = "state"
@@ -51,7 +51,7 @@ class ATTRIBUTES(Enum):
     FAN_MODE = "fan_mode"
 
 
-class COMMANDS(Enum):
+class COMMANDS(str, Enum):
     """Climate entity commands."""
 
     ON = "on"
@@ -62,11 +62,11 @@ class COMMANDS(Enum):
     FAN_MODE = "fan_mode"
 
 
-class DEVICECLASSES(Enum):
+class DEVICECLASSES(str, Enum):
     """Climate entity device classes."""
 
 
-class OPTIONS(Enum):
+class OPTIONS(str, Enum):
     """Climate entity options."""
 
     TEMPERATURE_UNIT = "temperature_unit"

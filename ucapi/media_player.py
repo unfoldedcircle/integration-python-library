@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(Enum):
+class STATES(str, Enum):
     """Media-player entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -28,7 +28,7 @@ class STATES(Enum):
     BUFFERING = "BUFFERING"
 
 
-class FEATURES(Enum):
+class FEATURES(str, Enum):
     """Media-player entity features."""
 
     ON_OFF = "on_off"
@@ -63,7 +63,7 @@ class FEATURES(Enum):
     SELECT_SOUND_MODE = "select_sound_mode"
 
 
-class ATTRIBUTES(Enum):
+class ATTRIBUTES(str, Enum):
     """Media-player entity attributes."""
 
     STATE = "state"
@@ -84,7 +84,7 @@ class ATTRIBUTES(Enum):
     SOUND_MODE_LIST = "sound_mode_list"
 
 
-class COMMANDS(Enum):
+class COMMANDS(str, Enum):
     """Media-player entity commands."""
 
     ON = "on"
@@ -124,7 +124,7 @@ class COMMANDS(Enum):
     SEARCH = "search"
 
 
-class DEVICECLASSES(Enum):
+class DEVICECLASSES(str, Enum):
     """Media-player entity device classes."""
 
     RECEIVER = "receiver"
@@ -134,13 +134,13 @@ class DEVICECLASSES(Enum):
     TV = "tv"
 
 
-class OPTIONS(Enum):
+class OPTIONS(str, Enum):
     """Media-player entity options."""
 
     VOLUME_STEPS = "volume_steps"
 
 
-class MEDIA_TYPE(Enum):
+class MEDIA_TYPE(str, Enum):
     """Media types."""
 
     MUSIC = "MUSIC"
@@ -162,7 +162,7 @@ class MediaPlayer(Entity):
         self,
         identifier: str,
         name: str | dict,
-        features: Set[FEATURES],
+        features: set[FEATURES],
         attributes: dict,
         deviceClass: DEVICECLASSES | None = None,
         options: dict | None = None,

@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(Enum):
+class STATES(str, Enum):
     """Cover entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -26,7 +26,7 @@ class STATES(Enum):
     CLOSED = "CLOSED"
 
 
-class FEATURES(Enum):
+class FEATURES(str, Enum):
     """Cover entity features."""
 
     OPEN = "open"
@@ -38,7 +38,7 @@ class FEATURES(Enum):
     TILT_POSITION = "tilt_position"
 
 
-class ATTRIBUTES(Enum):
+class ATTRIBUTES(str, Enum):
     """Cover entity attributes."""
 
     STATE = "state"
@@ -46,7 +46,7 @@ class ATTRIBUTES(Enum):
     TILT_POSITION = "tilt_position"
 
 
-class COMMANDS(Enum):
+class COMMANDS(str, Enum):
     """Cover entity commands."""
 
     OPEN = "open"
@@ -59,7 +59,7 @@ class COMMANDS(Enum):
     TILT_STOP = "tilt_stop"
 
 
-class DEVICECLASSES(Enum):
+class DEVICECLASSES(str, Enum):
     """Cover entity device classes."""
 
     BLIND = "blind"
@@ -71,7 +71,7 @@ class DEVICECLASSES(Enum):
     WINDOW = "window"
 
 
-class OPTIONS(Enum):
+class OPTIONS(str, Enum):
     """Cover entity options."""
 
 

@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES(Enum):
+class STATES(str, Enum):
     """Sensor entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -23,11 +23,11 @@ class STATES(Enum):
     ON = "ON"
 
 
-class FEATURES(Enum):
+class FEATURES(str, Enum):
     """Sensor entity features."""
 
 
-class ATTRIBUTES(Enum):
+class ATTRIBUTES(str, Enum):
     """Sensor entity attributes."""
 
     STATE = "state"
@@ -35,11 +35,11 @@ class ATTRIBUTES(Enum):
     UNIT = "unit"
 
 
-class COMMANDS(Enum):
+class COMMANDS(str, Enum):
     """Sensor entity commands."""
 
 
-class DEVICECLASSES(Enum):
+class DEVICECLASSES(str, Enum):
     """Sensor entity device classes."""
 
     CUSTOM = "custom"
@@ -52,7 +52,7 @@ class DEVICECLASSES(Enum):
     VOLTAGE = "voltage"
 
 
-class OPTIONS(Enum):
+class OPTIONS(str, Enum):
     """Sensor entity options."""
 
     CUSTOM_UNIT = "custom_unit"
