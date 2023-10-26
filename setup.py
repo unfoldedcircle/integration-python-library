@@ -7,7 +7,7 @@ from os import path
 
 PACKAGE_NAME = "ucapi"
 HERE = path.abspath(path.dirname(__file__))
-VERSION = "0.0.11"
+VERSION = "0.1.0"
 
 with open(path.join(HERE, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
