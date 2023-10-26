@@ -1,14 +1,23 @@
-import logging
+"""
+Media-player entity definitions.
 
-from ucapi.entity import TYPES
-from ucapi.entity import Entity
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
+import logging
+from enum import Enum
+
+from ucapi.entity import TYPES, Entity
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES:
+class STATES(str, Enum):
+    """Media-player entity states."""
+
     UNAVAILABLE = "UNAVAILABLE"
     UNKNOWN = "UNKNOWN"
     ON = "ON"
@@ -19,7 +28,9 @@ class STATES:
     BUFFERING = "BUFFERING"
 
 
-class FEATURES:
+class FEATURES(str, Enum):
+    """Media-player entity features."""
+
     ON_OFF = "on_off"
     TOGGLE = "toggle"
     VOLUME = "volume"
@@ -52,7 +63,9 @@ class FEATURES:
     SELECT_SOUND_MODE = "select_sound_mode"
 
 
-class ATTRIBUTES:
+class ATTRIBUTES(str, Enum):
+    """Media-player entity attributes."""
+
     STATE = "state"
     VOLUME = "volume"
     MUTED = "muted"
@@ -71,7 +84,9 @@ class ATTRIBUTES:
     SOUND_MODE_LIST = "sound_mode_list"
 
 
-class COMMANDS:
+class COMMANDS(str, Enum):
+    """Media-player entity commands."""
+
     ON = "on"
     OFF = "off"
     TOGGLE = "toggle"
@@ -109,7 +124,9 @@ class COMMANDS:
     SEARCH = "search"
 
 
-class DEVICECLASSES:
+class DEVICECLASSES(str, Enum):
+    """Media-player entity device classes."""
+
     RECEIVER = "receiver"
     SET_TOP_BOX = "set_top_box"
     SPEAKER = "speaker"
@@ -117,21 +134,53 @@ class DEVICECLASSES:
     TV = "tv"
 
 
-class OPTIONS:
+class OPTIONS(str, Enum):
+    """Media-player entity options."""
+
     VOLUME_STEPS = "volume_steps"
 
 
-class MEDIA_TYPE:
+class MEDIA_TYPE(str, Enum):
+    """Media types."""
+
     MUSIC = "MUSIC"
     RADIO = "RADIO"
     TVSHOW = "TVSHOW"
     MOVIE = "MOVIE"
     VIDEO = "VIDEO"
 
+
 class MediaPlayer(Entity):
-    def __init__(self, id, name, features, attributes, deviceClass = None, options = None, area=None, type="default"):
+    """
+    Media-player entity class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_media_player.md
+    for more information.
+    """
+
+    def __init__(
+        self,
+        identifier: str,
+        name: str | dict,
+        features: set[FEATURES],
+        attributes: dict,
+        deviceClass: DEVICECLASSES | None = None,
+        options: dict | None = None,
+        area: str | None = None,
+    ):
+        """
+        Create media-player entity instance.
+
+        :param identifier: entity identifier
+        :param name: friendly name
+        :param features: media-player features
+        :param attributes: media-player attributes
+        :param deviceClass: optional media-player device class
+        :param options: options
+        :param area: optional area
+        """
         super().__init__(
-            id,
+            identifier,
             name,
             TYPES.MEDIA_PLAYER,
             features,

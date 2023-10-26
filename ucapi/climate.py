@@ -1,14 +1,23 @@
-import logging
+"""
+Climate entity definitions.
 
-from ucapi.entity import TYPES
-from ucapi.entity import Entity
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
+import logging
+from enum import Enum
+
+from ucapi.entity import TYPES, Entity
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES:
+class STATES(str, Enum):
+    """Climate entity states."""
+
     UNAVAILABLE = "UNAVAILABLE"
     UNKNOWN = "UNKNOWN"
     OFF = "OFF"
@@ -19,7 +28,9 @@ class STATES:
     AUTO = "AUTO"
 
 
-class FEATURES:
+class FEATURES(str, Enum):
+    """Climate entity features."""
+
     ON_OFF = "on_off"
     HEAT = "heat"
     COOL = "cool"
@@ -29,7 +40,9 @@ class FEATURES:
     FAN = "fan"
 
 
-class ATTRIBUTES:
+class ATTRIBUTES(str, Enum):
+    """Climate entity attributes."""
+
     STATE = "state"
     CURRENT_TEMPERATURE = "current_temperature"
     TARGET_TEMPERATURE = "target_temperature"
@@ -38,7 +51,9 @@ class ATTRIBUTES:
     FAN_MODE = "fan_mode"
 
 
-class COMMANDS:
+class COMMANDS(str, Enum):
+    """Climate entity commands."""
+
     ON = "on"
     OFF = "off"
     HVAC_MODE = "hvac_mode"
@@ -47,11 +62,13 @@ class COMMANDS:
     FAN_MODE = "fan_mode"
 
 
-class DEVICECLASSES:
-    """"""
+class DEVICECLASSES(str, Enum):
+    """Climate entity device classes."""
 
 
-class OPTIONS:
+class OPTIONS(str, Enum):
+    """Climate entity options."""
+
     TEMPERATURE_UNIT = "temperature_unit"
     TARGET_TEMPERATURE_STEP = "target_temperature_step"
     MAX_TEMPERATURE = "max_temperature"
@@ -60,19 +77,36 @@ class OPTIONS:
 
 
 class Climate(Entity):
+    """
+    Climate entity class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_climate.md
+    for more information.
+    """
+
     def __init__(
         self,
-        id,
-        name,
-        features,
-        attributes,
-        deviceClass=None,
-        options=None,
-        area=None,
-        type="default",
+        identifier: str,
+        name: str | dict,
+        features: list[FEATURES],
+        attributes: dict,
+        deviceClass: str | None = None,
+        options: dict | None = None,
+        area: str | None = None,
     ):
+        """
+        Create a climate-entity instance.
+
+        :param identifier: entity identifier
+        :param name: friendly name
+        :param features: climate features
+        :param attributes: climate attributes
+        :param deviceClass: optional climate device class
+        :param options: options
+        :param area: optional area
+        """
         super().__init__(
-            id,
+            identifier,
             name,
             TYPES.CLIMATE,
             features,

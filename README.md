@@ -8,8 +8,12 @@ Not supported:
 
 - secure WebSocket
 
+Requires Python 3.10 or newer
+
 ---
 
 ### Local testing:
+```console
 python3 setup.py bdist_wheel
-pip3 install /path/to/wheelfile.whl
+pip3 install dist/ucapi-$VERSION-py3-none-any.whl
+```

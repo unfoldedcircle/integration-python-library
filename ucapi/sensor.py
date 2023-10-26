@@ -1,34 +1,47 @@
-import logging
+"""
+Sensor entity definitions.
 
-from ucapi.entity import TYPES
-from ucapi.entity import Entity
+:copyright: (c) 2023 by Unfolded Circle ApS.
+:license: MPL 2.0, see LICENSE for more details.
+"""
+
+import logging
+from enum import Enum
+
+from ucapi.entity import TYPES, Entity
 
 logging.basicConfig()
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 
-class STATES:
+class STATES(str, Enum):
+    """Sensor entity states."""
+
     UNAVAILABLE = "UNAVAILABLE"
     UNKNOWN = "UNKNOWN"
     ON = "ON"
 
 
-class FEATURES:
-    """"""
+class FEATURES(str, Enum):
+    """Sensor entity features."""
 
 
-class ATTRIBUTES:
+class ATTRIBUTES(str, Enum):
+    """Sensor entity attributes."""
+
     STATE = "state"
     VALUE = "value"
     UNIT = "unit"
 
 
-class COMMANDS:
-    """"""
+class COMMANDS(str, Enum):
+    """Sensor entity commands."""
 
 
-class DEVICECLASSES:
+class DEVICECLASSES(str, Enum):
+    """Sensor entity device classes."""
+
     CUSTOM = "custom"
     BATTERY = "battery"
     CURRENT = "current"
@@ -39,7 +52,9 @@ class DEVICECLASSES:
     VOLTAGE = "voltage"
 
 
-class OPTIONS:
+class OPTIONS(str, Enum):
+    """Sensor entity options."""
+
     CUSTOM_UNIT = "custom_unit"
     NATIVE_UNIT = "native_unit"
     DECIMALS = "decimals"
@@ -48,19 +63,36 @@ class OPTIONS:
 
 
 class Sensor(Entity):
+    """
+    Sensor entity class.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_sensor.md
+    for more information.
+    """
+
     def __init__(
         self,
-        id,
-        name,
-        features,
-        attributes,
-        deviceClass=None,
-        options=None,
-        area=None,
-        type="default",
+        identifier: str,
+        name: str | dict,
+        features: list[FEATURES],
+        attributes: dict,
+        deviceClass: DEVICECLASSES | None = None,
+        options: dict | None = None,
+        area: str | None = None,
     ):
+        """
+        Create sensor-entity instance.
+
+        :param identifier: entity identifier
+        :param name: friendly name
+        :param features: sensor features
+        :param attributes: sensor attributes
+        :param deviceClass: optional sensor device class
+        :param options: options
+        :param area: optional area
+        """
         super().__init__(
-            id,
+            identifier,
             name,
             TYPES.SENSOR,
             features,
