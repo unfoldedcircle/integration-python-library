@@ -86,17 +86,27 @@ class Climate(Entity):
 
     def __init__(
         self,
-        id,
-        name,
-        features,
-        attributes,
-        deviceClass=None,
-        options=None,
-        area=None,
-        type="default",
+        identifier: str,
+        name: str | dict,
+        features: list[FEATURES],
+        attributes: dict,
+        deviceClass: str | None = None,
+        options: dict | None = None,
+        area: str | None = None,
     ):
+        """
+        Create a climate-entity instance.
+
+        :param identifier: entity identifier
+        :param name: friendly name
+        :param features: climate features
+        :param attributes: climate attributes
+        :param deviceClass: optional climate device class
+        :param options: options
+        :param area: optional area
+        """
         super().__init__(
-            id,
+            identifier,
             name,
             TYPES.CLIMATE,
             features,

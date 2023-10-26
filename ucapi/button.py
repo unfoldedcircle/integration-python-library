@@ -42,9 +42,16 @@ class Button(Entity):
     for more information.
     """
 
-    def __init__(self, id, name, area=None, type="default"):
+    def __init__(self, identifier: str, name: str | dict, area: str | None = None):
+        """
+        Create button-entity instance.
+
+        :param identifier: entity identifier
+        :param name: friendly name, either a string or a language dictionary
+        :param area: optional area name
+        """
         super().__init__(
-            id,
+            identifier,
             name,
             TYPES.BUTTON,
             ["press"],

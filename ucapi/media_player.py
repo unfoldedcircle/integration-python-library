@@ -158,9 +158,29 @@ class MediaPlayer(Entity):
     for more information.
     """
 
-    def __init__(self, id, name, features, attributes, deviceClass=None, options=None, area=None, type="default"):
+    def __init__(
+        self,
+        identifier: str,
+        name: str | dict,
+        features: Set[FEATURES],
+        attributes: dict,
+        deviceClass: DEVICECLASSES | None = None,
+        options: dict | None = None,
+        area: str | None = None,
+    ):
+        """
+        Create media-player entity instance.
+
+        :param identifier: entity identifier
+        :param name: friendly name
+        :param features: media-player features
+        :param attributes: media-player attributes
+        :param deviceClass: optional media-player device class
+        :param options: options
+        :param area: optional area
+        """
         super().__init__(
-            id,
+            identifier,
             name,
             TYPES.MEDIA_PLAYER,
             features,

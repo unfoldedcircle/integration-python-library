@@ -72,17 +72,27 @@ class Sensor(Entity):
 
     def __init__(
         self,
-        id,
-        name,
-        features,
-        attributes,
-        deviceClass=None,
-        options=None,
-        area=None,
-        type="default",
+        identifier: str,
+        name: str | dict,
+        features: list[FEATURES],
+        attributes: dict,
+        deviceClass: DEVICECLASSES | None = None,
+        options: dict | None = None,
+        area: str | None = None,
     ):
+        """
+        Create sensor-entity instance.
+
+        :param identifier: entity identifier
+        :param name: friendly name
+        :param features: sensor features
+        :param attributes: sensor attributes
+        :param deviceClass: optional sensor device class
+        :param options: options
+        :param area: optional area
+        """
         super().__init__(
-            id,
+            identifier,
             name,
             TYPES.SENSOR,
             features,

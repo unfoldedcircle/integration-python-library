@@ -34,7 +34,8 @@ disable=
     too-many-instance-attributes,
     global-statement,
     too-many-arguments,
-    unused-argument
+    unused-argument,
+    too-few-public-methods
 
 [STRING]
 

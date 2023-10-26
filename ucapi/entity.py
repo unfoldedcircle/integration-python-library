@@ -30,22 +30,33 @@ class Entity:
 
     def __init__(
         self,
-        id,
-        name,
-        entityType: TYPES,
-        features,
-        attributes,
-        deviceClass,
-        options,
-        area,
-        type="default",
+        identifier: str,
+        name: str | dict,
+        entity_type: TYPES,
+        features: list[str],
+        attributes: dict,
+        device_class: str | None,
+        options: dict | None,
+        area: str | None = None,
     ):
-        self.id = id
+        """
+        Initialize entity.
+
+        :param identifier: entity identifier
+        :param name: friendly name, either a string or a language dictionary
+        :param entity_type: entity type
+        :param features: entity feature array
+        :param attributes: entity attributes
+        :param device_class: entity device class
+        :param options: entity options
+        :param area: optional area name
+        """
+        self.id = identifier
         self.name = {"en": name} if isinstance(name, str) else name
-        self.entityType = entityType
+        self.entityType = entity_type
         self.deviceId = None
         self.features = features
         self.attributes = attributes
-        self.deviceClass = deviceClass
+        self.deviceClass = device_class
         self.options = options
         self.area = area

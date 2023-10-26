@@ -8,6 +8,8 @@ Not supported:
 
 - secure WebSocket
 
+Requires Python 3.10 or newer
+
 ---
 
 ### Local testing:

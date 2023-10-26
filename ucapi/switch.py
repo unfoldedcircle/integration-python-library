@@ -68,17 +68,27 @@ class Switch(Entity):
 
     def __init__(
         self,
-        id,
-        name,
-        features,
-        attributes,
-        deviceClass=None,
-        options=None,
-        area=None,
-        type="default",
+        identifier: str,
+        name: str | dict,
+        features: list[FEATURES],
+        attributes: dict,
+        deviceClass: DEVICECLASSES | None = None,
+        options: dict | None = None,
+        area: str | None = None,
     ):
+        """
+        Create switch-entity instance.
+
+        :param identifier: entity identifier
+        :param name: friendly name
+        :param features: switch features
+        :param attributes: switch attributes
+        :param deviceClass: optional switch device class
+        :param options: options
+        :param area: optional area
+        """
         super().__init__(
-            id,
+            identifier,
             name,
             TYPES.SWITCH,
             features,
