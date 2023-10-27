@@ -15,6 +15,12 @@ from typing import Any
 
 import websockets
 from pyee import AsyncIOEventEmitter
+
+# workaround for pylint error: E0611: No name 'ConnectionClosedOK' in module 'websockets' (no-name-in-module)
+from websockets.exceptions import ConnectionClosedOK
+
+# workaround for pylint error: E1101: Module 'websockets' has no 'serve' member (no-member)
+from websockets.server import serve
 from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
@@ -128,7 +134,7 @@ class IntegrationAPI:
         return None
 
     async def _start_web_socket_server(self):
-        async with websockets.serve(self._handle_ws, self._interface, int(self._port)):
+        async with serve(self._handle_ws, self._interface, int(self._port)):
             await asyncio.Future()
 
     async def _handle_ws(self, websocket):
@@ -143,7 +149,7 @@ class IntegrationAPI:
                 # process message
                 await self._process_ws_message(websocket, message)
 
-        except websockets.ConnectionClosedOK:
+        except ConnectionClosedOK:
             _LOG.info("WS: Connection Closed")
 
         except websockets.exceptions.ConnectionClosedError:
