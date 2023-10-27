@@ -28,6 +28,7 @@ class StatusCodes(IntEnum):
     SERVICE_UNAVAILABLE = 503
 
 
+# Does WsMessages need to be public?
 class WsMessages(str, Enum):
     """WebSocket request messages from Remote Two."""
 
@@ -44,6 +45,7 @@ class WsMessages(str, Enum):
     SET_DRIVER_USER_DATA = "set_driver_user_data"
 
 
+# Does WsMsgEvents need to be public?
 class WsMsgEvents(str, Enum):
     """WebSocket event messages from Remote Two."""
 
@@ -78,6 +80,7 @@ class Events(str, Enum):
     EXIT_STANDBY = "exit_standby"
 
 
+# Does EventCategory need to be public?
 class EventCategory(str, Enum):
     """Event categories."""
 

@@ -21,9 +21,8 @@ from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 import ucapi.api_definitions as uc
 from ucapi import entities
 
-logging.basicConfig()
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.DEBUG)
 
 
 class IntegrationAPI:
@@ -112,7 +111,7 @@ class IntegrationAPI:
 
         self._server_task = self._loop.create_task(self._start_web_socket_server())
 
-        LOG.info(
+        _LOG.info(
             "Driver is up: %s, version: %s, listening on: %s",
             self.driver_info["driver_id"],
             self.driver_info["version"],
@@ -135,7 +134,7 @@ class IntegrationAPI:
     async def _handle_ws(self, websocket):
         try:
             self._clients.add(websocket)
-            LOG.info("WS: Client added")
+            _LOG.info("WS: Client added")
 
             # authenticate on connection
             await self._authenticate(websocket, True)
@@ -145,14 +144,14 @@ class IntegrationAPI:
                 await self._process_ws_message(websocket, message)
 
         except websockets.ConnectionClosedOK:
-            LOG.info("WS: Connection Closed")
+            _LOG.info("WS: Connection Closed")
 
         except websockets.exceptions.ConnectionClosedError:
-            LOG.info("WS: Connection Closed")
+            _LOG.info("WS: Connection Closed")
 
         finally:
             self._clients.remove(websocket)
-            LOG.info("WS: Client removed")
+            _LOG.info("WS: Client removed")
             self.events.emit(uc.Events.DISCONNECT)
 
     async def _send_ok_result(self, websocket, req_id: str, msg_data: dict[str, Any] | None = None) -> None:
@@ -176,17 +175,17 @@ class IntegrationAPI:
 
         if websocket in self._clients:
             data_dump = json.dumps(data)
-            LOG.debug("->: %s", data_dump)
+            _LOG.debug("->: %s", data_dump)
             await websocket.send(data_dump)
         else:
-            LOG.error("Error sending response: connection no longer established")
+            _LOG.error("Error sending response: connection no longer established")
 
     async def _broadcast_event(self, msg: str, msg_data: dict[str, Any], category: str):
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
 
         for websocket in self._clients:
             data_dump = json.dumps(data)
-            LOG.debug("->: %s", data_dump)
+            _LOG.debug("->: %s", data_dump)
             await websocket.send(data_dump)
 
     async def _send_event(self, websocket, msg: str, msg_data: dict[str, Any], category: str):
@@ -194,13 +193,13 @@ class IntegrationAPI:
 
         if websocket in self._clients:
             data_dump = json.dumps(data)
-            LOG.debug("->: %s", data_dump)
+            _LOG.debug("->: %s", data_dump)
             await websocket.send(data_dump)
         else:
-            LOG.error("Error sending event: connection no longer established")
+            _LOG.error("Error sending event: connection no longer established")
 
     async def _process_ws_message(self, websocket, message) -> None:
-        LOG.debug("<-: %s", message)
+        _LOG.debug("<-: %s", message)
 
         data = json.loads(message)
         kind = data["kind"]
@@ -210,7 +209,7 @@ class IntegrationAPI:
 
         if kind == "req":
             if req_id is None:
-                LOG.warning("Ignoring request message with missing 'req_id': %s", message)
+                _LOG.warning("Ignoring request message with missing 'req_id': %s", message)
             else:
                 await self._handle_ws_request_msg(websocket, msg, req_id, msg_data)
         elif kind == "event":
@@ -291,14 +290,14 @@ class IntegrationAPI:
 
     async def _subscribe_events(self, msg_data: dict[str, Any] | None) -> None:
         if msg_data is None:
-            LOG.warning("Ignoring _subscribe_events: called with empty msg_data")
+            _LOG.warning("Ignoring _subscribe_events: called with empty msg_data")
             return
         for entity_id in msg_data["entity_ids"]:
             entity = self.available_entities.get(entity_id)
             if entity is not None:
                 self.configured_entities.add(entity)
             else:
-                LOG.warning(
+                _LOG.warning(
                     "WARN: cannot subscribe entity %s: entity is not available",
                     entity_id,
                 )
@@ -307,7 +306,7 @@ class IntegrationAPI:
 
     async def _unsubscribe_events(self, msg_data: dict[str, Any] | None) -> bool:
         if msg_data is None:
-            LOG.warning("Ignoring _unsubscribe_events: called with empty msg_data")
+            _LOG.warning("Ignoring _unsubscribe_events: called with empty msg_data")
             return False
 
         res = True
@@ -322,7 +321,7 @@ class IntegrationAPI:
 
     async def _entity_command(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> None:
         if msg_data is None:
-            LOG.warning("Ignoring _entity_command: called with empty msg_data")
+            _LOG.warning("Ignoring _entity_command: called with empty msg_data")
             return
         self.events.emit(
             uc.Events.ENTITY_COMMAND,
@@ -336,7 +335,7 @@ class IntegrationAPI:
 
     async def _setup_driver(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> None:
         if msg_data is None:
-            LOG.warning("Ignoring _setup_driver: called with empty msg_data")
+            _LOG.warning("Ignoring _setup_driver: called with empty msg_data")
             return
         self.events.emit(uc.Events.SETUP_DRIVER, websocket, req_id, msg_data["setup_data"])
 
@@ -346,7 +345,7 @@ class IntegrationAPI:
         elif "confirm" in msg_data:
             self.events.emit(uc.Events.SETUP_DRIVER_USER_CONFIRMATION, websocket, req_id, data=None)
         else:
-            LOG.warning("Unsupported set_driver_user_data payload received")
+            _LOG.warning("Unsupported set_driver_user_data payload received")
 
     async def acknowledge_command(self, websocket, req_id: int, status_code=uc.StatusCodes.OK) -> None:
         """Acknowledge a command from Remote Two."""

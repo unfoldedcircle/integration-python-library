@@ -5,10 +5,14 @@ Entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
+import logging
 from enum import Enum
 
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.DEBUG)
 
-class Types(str, Enum):
+
+class EntityTypes(str, Enum):
     """Entity types."""
 
     COVER = "cover"
@@ -32,7 +36,7 @@ class Entity:
         self,
         identifier: str,
         name: str | dict,
-        entity_type: Types,
+        entity_type: EntityTypes,
         features: list[str],
         attributes: dict,
         device_class: str | None,
@@ -60,3 +64,5 @@ class Entity:
         self.device_class = device_class
         self.options = options
         self.area = area
+
+        _LOG.debug("%s entity created with id: %s", self.entity_type, self.id)

@@ -13,9 +13,8 @@ from pyee import AsyncIOEventEmitter
 from ucapi.api_definitions import Events
 from ucapi.entity import Entity
 
-logging.basicConfig()
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.DEBUG)
 
 
 class Entities:
@@ -40,7 +39,7 @@ class Entities:
     def get(self, entity_id: str) -> Entity | None:
         """Retrieve entity with given identifier."""
         if entity_id not in self._storage:
-            LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
+            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
             return None
 
         return self._storage[entity_id]
@@ -48,27 +47,27 @@ class Entities:
     def add(self, entity: Entity) -> bool:
         """Add entity to storage."""
         if entity.id in self._storage:
-            LOG.debug("ENTITIES(%s): Entity already exists with id: %s", self.id, entity.id)
+            _LOG.debug("ENTITIES(%s): Entity already exists with id: %s", self.id, entity.id)
             return False
 
         self._storage[entity.id] = entity
-        LOG.debug("ENTITIES(%s): Entity added with id: %s", self.id, entity.id)
+        _LOG.debug("ENTITIES(%s): Entity added with id: %s", self.id, entity.id)
         return True
 
     def remove(self, entity_id: str) -> bool:
         """Remove entity from storage."""
         if entity_id not in self._storage:
-            LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
+            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
             return True
 
         del self._storage[entity_id]
-        LOG.debug("ENTITIES(%s): Entity deleted with id: %s", self.id, entity_id)
+        _LOG.debug("ENTITIES(%s): Entity deleted with id: %s", self.id, entity_id)
         return True
 
     def update_attributes(self, entity_id: str, attributes: dict) -> bool:
         """Update entity attributes."""
         if entity_id not in self._storage:
-            LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
+            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
             return False
 
         for key in attributes:
@@ -81,7 +80,7 @@ class Entities:
             attributes,
         )
 
-        LOG.debug("ENTITIES(%s): Entity attributes updated with id: %s", self.id, entity_id)
+        _LOG.debug("ENTITIES(%s): Entity attributes updated with id: %s", self.id, entity_id)
         return True
 
     def get_all(self) -> list[dict[str, any]]:

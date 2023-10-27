@@ -5,14 +5,9 @@ Climate entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-import logging
 from enum import Enum
 
-from ucapi.entity import Entity, Types
-
-logging.basicConfig()
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
+from ucapi.entity import Entity, EntityTypes
 
 
 class States(str, Enum):
@@ -108,12 +103,10 @@ class Climate(Entity):
         super().__init__(
             identifier,
             name,
-            Types.CLIMATE,
+            EntityTypes.CLIMATE,
             features,
             attributes,
             device_class,
             options,
             area,
         )
-
-        LOG.debug("Climate entity created with id: %s", self.id)
