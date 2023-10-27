@@ -1,3 +1,4 @@
+# pylint: disable=R0801
 """
 Sensor entity definitions.
 
