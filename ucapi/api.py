@@ -78,7 +78,7 @@ class IntegrationAPI:
                 "attributes": attributes,
             }
 
-            await self._broadcast_event(uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY)
+            await self._broadcast_ws_event(uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY)
 
         # Load driver config
         with open(self._driver_path, "r", encoding="utf-8") as file:
@@ -144,7 +144,7 @@ class IntegrationAPI:
     async def _handle_ws(self, websocket) -> None:
         try:
             self._clients.add(websocket)
-            _LOG.info("WS: Client added")
+            _LOG.info("WS: Client added: %s", websocket.remote_address)
 
             # authenticate on connection
             await self._authenticate(websocket, True)
@@ -154,18 +154,31 @@ class IntegrationAPI:
                 await self._process_ws_message(websocket, message)
 
         except ConnectionClosedOK:
-            _LOG.info("WS: Connection Closed")
+            _LOG.info("WS: Connection closed")
 
-        except websockets.exceptions.ConnectionClosedError:
-            _LOG.info("WS: Connection Closed")
+        except websockets.exceptions.ConnectionClosedError as e:
+            _LOG.info("WS: Connection closed with error %d: %s", e.code, e.reason)
+
+        except websockets.exceptions.WebSocketException as e:
+            _LOG.error("WS: Connection closed due to processing error: %s", e)
 
         finally:
             self._clients.remove(websocket)
             _LOG.info("WS: Client removed")
             self._events.emit(uc.Events.DISCONNECT)
 
-    async def _send_ok_result(self, websocket, req_id: int, msg_data: dict[str, Any] | None = None) -> None:
-        await self._send_response(websocket, req_id, "result", msg_data, uc.StatusCodes.OK)
+    async def _send_ok_result(self, websocket, req_id: int, msg_data: dict[str, Any] | list | None = None) -> None:
+        """
+        Send a WebSocket success message with status code OK.
+
+        :param websocket: client connection
+        :param req_id: request message identifier
+        :param msg_data: message data payload
+
+        Raises:
+            websockets.ConnectionClosed: When the connection is closed.
+        """
+        await self._send_ws_response(websocket, req_id, "result", msg_data, uc.StatusCodes.OK)
 
     async def _send_error_result(
         self,
@@ -174,16 +187,39 @@ class IntegrationAPI:
         status_code: uc.StatusCodes = uc.StatusCodes.SERVER_ERROR,
         msg_data: dict[str, Any] | None = None,
     ) -> None:
-        await self._send_response(websocket, req_id, "result", msg_data, status_code)
+        """
+        Send a WebSocket error response message.
 
-    async def _send_response(
+        :param websocket: client connection
+        :param req_id: request message identifier
+        :param status_code: status code
+        :param msg_data: message data payload
+
+        Raises:
+            websockets.ConnectionClosed: When the connection is closed.
+        """
+        await self._send_ws_response(websocket, req_id, "result", msg_data, status_code)
+
+    async def _send_ws_response(
         self,
         websocket,
         req_id: int,
         msg: str,
-        msg_data: dict[str, Any] | list[Any] | None,
-        status_code=uc.StatusCodes.OK,
+        msg_data: dict[str, Any] | list | None,
+        status_code: uc.StatusCodes = uc.StatusCodes.OK,
     ) -> None:
+        """
+        Send a WebSocket response message.
+
+        :param websocket: client connection
+        :param req_id: request message identifier
+        :param msg: message name
+        :param msg_data: message data payload
+        :param status_code: status code
+
+        Raises:
+            websockets.ConnectionClosed: When the connection is closed.
+        """
         data = {
             "kind": "resp",
             "req_id": req_id,
@@ -194,31 +230,54 @@ class IntegrationAPI:
 
         if websocket in self._clients:
             data_dump = json.dumps(data)
-            _LOG.debug("->: %s", data_dump)
+            _LOG.debug("[%s] ->: %s", websocket.remote_address, data_dump)
             await websocket.send(data_dump)
         else:
             _LOG.error("Error sending response: connection no longer established")
 
-    async def _broadcast_event(self, msg: str, msg_data: dict[str, Any], category: str) -> None:
+    async def _broadcast_ws_event(self, msg: str, msg_data: dict[str, Any], category: uc.EventCategory) -> None:
+        """
+        Send the given event-message to all connected WebSocket clients.
+
+        If a client is no longer connected, a log message is printed and the remaining clients are notified.
+
+        :param msg: event message name
+        :param msg_data: message data payload
+        :param category: event category
+        """
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
 
         for websocket in self._clients:
             data_dump = json.dumps(data)
-            _LOG.debug("->: %s", data_dump)
-            await websocket.send(data_dump)
+            _LOG.debug("[%s] ->: %s", websocket.remote_address, data_dump)
+            try:
+                await websocket.send(data_dump)
+            except websockets.exceptions.WebSocketException:
+                pass
 
-    async def _send_event(self, websocket, msg: str, msg_data: dict[str, Any], category: str) -> None:
+    async def _send_ws_event(self, websocket, msg: str, msg_data: dict[str, Any], category: uc.EventCategory) -> None:
+        """
+        Send an event-message to the given WebSocket client.
+
+        :param websocket: client connection
+        :param msg: event message name
+        :param msg_data: message data payload
+        :param category: event category
+
+        Raises:
+            websockets.ConnectionClosed: When the connection is closed.
+        """
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
 
         if websocket in self._clients:
             data_dump = json.dumps(data)
-            _LOG.debug("->: %s", data_dump)
+            _LOG.debug("[%s] ->: %s", websocket.remote_address, data_dump)
             await websocket.send(data_dump)
         else:
             _LOG.error("Error sending event: connection no longer established")
 
     async def _process_ws_message(self, websocket, message) -> None:
-        _LOG.debug("<-: %s", message)
+        _LOG.debug("[%s] <-: %s", websocket.remote_address, message)
 
         data = json.loads(message)
         kind = data["kind"]
@@ -236,12 +295,12 @@ class IntegrationAPI:
 
     async def _handle_ws_request_msg(self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None) -> None:
         if msg == uc.WsMessages.GET_DRIVER_VERSION:
-            await self._send_response(websocket, req_id, uc.WsMsgEvents.DRIVER_VERSION, self.get_driver_version())
+            await self._send_ws_response(websocket, req_id, uc.WsMsgEvents.DRIVER_VERSION, self.get_driver_version())
         elif msg == uc.WsMessages.GET_DEVICE_STATE:
-            await self._send_response(websocket, req_id, uc.WsMsgEvents.DEVICE_STATE, {"state": self.state})
+            await self._send_ws_response(websocket, req_id, uc.WsMsgEvents.DEVICE_STATE, {"state": self.device_state})
         elif msg == uc.WsMessages.GET_AVAILABLE_ENTITIES:
             available_entities = self._available_entities.get_all()
-            await self._send_response(
+            await self._send_ws_response(
                 websocket,
                 req_id,
                 uc.WsMsgEvents.AVAILABLE_ENTITIES,
@@ -249,7 +308,7 @@ class IntegrationAPI:
             )
         elif msg == uc.WsMessages.GET_ENTITY_STATES:
             entity_states = await self._configured_entities.get_states()
-            await self._send_response(
+            await self._send_ws_response(
                 websocket,
                 req_id,
                 uc.WsMsgEvents.ENTITY_STATES,
@@ -264,7 +323,7 @@ class IntegrationAPI:
             await self._unsubscribe_events(msg_data)
             await self._send_ok_result(websocket, req_id)
         elif msg == uc.WsMessages.GET_DRIVER_METADATA:
-            await self._send_response(websocket, req_id, uc.WsMsgEvents.DRIVER_METADATA, self._driver_info)
+            await self._send_ws_response(websocket, req_id, uc.WsMsgEvents.DRIVER_METADATA, self._driver_info)
         elif msg == uc.WsMessages.SETUP_DRIVER:
             await self._setup_driver(websocket, req_id, msg_data)
         elif msg == uc.WsMessages.SET_DRIVER_USER_DATA:
@@ -283,7 +342,7 @@ class IntegrationAPI:
             self._events.emit(uc.Events.SETUP_DRIVER_ABORT)
 
     async def _authenticate(self, websocket, success: bool) -> None:
-        await self._send_response(
+        await self._send_ws_response(
             websocket,
             0,
             uc.WsMessages.AUTHENTICATION,
@@ -301,12 +360,14 @@ class IntegrationAPI:
             },
         }
 
-    # TODO use a property setter?
     async def set_device_state(self, state: uc.DeviceStates) -> None:
-        """Set new state."""
-        self._state = state
+        """Set new device state and notify all connected clients."""
+        if self._state != state:
+            self._state = state
 
-        await self._broadcast_event(uc.WsMsgEvents.DEVICE_STATE, {"state": self.state}, uc.EventCategory.DEVICE)
+            await self._broadcast_ws_event(
+                uc.WsMsgEvents.DEVICE_STATE, {"state": self.device_state}, uc.EventCategory.DEVICE
+            )
 
     async def _subscribe_events(self, msg_data: dict[str, Any] | None) -> None:
         if msg_data is None:
@@ -367,18 +428,54 @@ class IntegrationAPI:
         else:
             _LOG.warning("Unsupported set_driver_user_data payload received")
 
-    async def acknowledge_command(self, websocket, req_id: int, status_code=uc.StatusCodes.OK) -> None:
-        """Acknowledge a command from Remote Two."""
-        await self._send_response(websocket, req_id, "result", {}, status_code)
+    async def acknowledge_command(
+        self, websocket, req_id: int, status_code: uc.StatusCodes = uc.StatusCodes.OK
+    ) -> None:
+        """
+        Acknowledge a command from Remote Two.
+
+        :param websocket: client connection
+        :param req_id: request message identifier to acknowledge
+        :param status_code: status code
+
+        Raises:
+            websockets.ConnectionClosed: When the connection is closed.
+        """
+        await self._send_ws_response(websocket, req_id, "result", {}, status_code)
 
     async def driver_setup_progress(self, websocket) -> None:
-        """Send a driver setup progress event to Remote Two."""
+        """
+        Send a driver setup progress event to Remote Two.
+
+        :param websocket: client connection
+
+        Raises:
+            websockets.ConnectionClosed: When the connection is closed.
+        """
         data = {"event_type": "SETUP", "state": "SETUP"}
 
-        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
-    async def request_driver_setup_user_confirmation(self, websocket, title, msg1=None, image=None, msg2=None) -> None:
-        """Request a user confirmation during the driver setup process."""
+    async def request_driver_setup_user_confirmation(
+        self,
+        websocket,
+        title: str | dict[str, str],
+        msg1: str | dict[str, str] | None = None,
+        image: str | None = None,
+        msg2: str | dict[str, str] | None = None,
+    ) -> None:
+        """
+        Request a user confirmation during the driver setup process.
+
+        :param websocket: client connection
+        :param title: page title
+        :param msg1: optional header message
+        :param image: optional image between header and footer
+        :param msg2: optional footer message
+
+        Raises:
+            websockets.ConnectionClosed: When the connection is closed.
+        """
         data = {
             "event_type": "SETUP",
             "state": "WAIT_USER_ACTION",
@@ -392,9 +489,9 @@ class IntegrationAPI:
             },
         }
 
-        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
-    async def request_driver_setup_user_input(self, websocket, title, settings: dict[str, Any]) -> None:
+    async def request_driver_setup_user_input(self, websocket, title, settings: dict[str, Any] | list) -> None:
         """Request a user input during the driver setup process."""
         data = {
             "event_type": "SETUP",
@@ -402,19 +499,19 @@ class IntegrationAPI:
             "require_user_action": {"input": {"title": _to_language_object(title), "settings": settings}},
         }
 
-        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
     async def driver_setup_complete(self, websocket) -> None:
         """Send a driver setup complete event to Remote Two."""
         data = {"event_type": "STOP", "state": "OK"}
 
-        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
     async def driver_setup_error(self, websocket, error="OTHER") -> None:
         """Send a driver setup error event to Remote Two."""
         data = {"event_type": "STOP", "state": "ERROR", "error": error}
 
-        await self._send_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
     ##############
     # Properties #
@@ -426,8 +523,12 @@ class IntegrationAPI:
         return self._events
 
     @property
-    def state(self) -> str:
-        """Return driver state."""
+    def device_state(self) -> uc.DeviceStates:
+        """
+        Return device state.
+
+        Use set_device_state to update the state and notify all clients.
+        """
         return self._state
 
     @property
