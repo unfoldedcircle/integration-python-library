@@ -158,7 +158,7 @@ class MediaPlayer(Entity):
         self,
         identifier: str,
         name: str | dict,
-        features: set[Features],
+        features: list[Features],
         attributes: dict,
         device_class: DeviceClasses | None = None,
         options: dict | None = None,
