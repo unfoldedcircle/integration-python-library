@@ -25,8 +25,7 @@ from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 import ucapi.api_definitions as uc
-
-from .entities import Entities
+from ucapi.entities import Entities
 
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
@@ -102,12 +101,14 @@ class IntegrationAPI:
             socket.gethostbyname(socket.gethostname()) if self._driver_info["driver_url"] is None else self._interface
         )
 
+        # addr = address if address else None
+
         if self._disable_mdns_publish is False:
             # Setup zeroconf service info
             info = AsyncServiceInfo(
                 "_uc-integration._tcp.local.",
                 f"{self._driver_info['driver_id']}._uc-integration._tcp.local.",
-                addresses=[addr],
+                addresses=[addr] if addr else None,
                 port=int(self._port),
                 properties={
                     "name": name,
@@ -163,16 +164,25 @@ class IntegrationAPI:
             _LOG.info("WS: Client removed")
             self._events.emit(uc.Events.DISCONNECT)
 
-    async def _send_ok_result(self, websocket, req_id: str, msg_data: dict[str, Any] | None = None) -> None:
-        await self._send_response(websocket, req_id, "result", msg_data, 200)
+    async def _send_ok_result(self, websocket, req_id: int, msg_data: dict[str, Any] | None = None) -> None:
+        await self._send_response(websocket, req_id, "result", msg_data, uc.StatusCodes.OK)
 
     async def _send_error_result(
-        self, websocket, req_id: int, status_code=500, msg_data: dict[str, Any] | None = None
+        self,
+        websocket,
+        req_id: int,
+        status_code: uc.StatusCodes = uc.StatusCodes.SERVER_ERROR,
+        msg_data: dict[str, Any] | None = None,
     ) -> None:
         await self._send_response(websocket, req_id, "result", msg_data, status_code)
 
     async def _send_response(
-        self, websocket, req_id: int, msg: str, msg_data: dict[str, Any] | None, status_code=uc.StatusCodes.OK
+        self,
+        websocket,
+        req_id: int,
+        msg: str,
+        msg_data: dict[str, Any] | list[Any] | None,
+        status_code=uc.StatusCodes.OK,
     ) -> None:
         data = {
             "kind": "resp",
@@ -228,7 +238,7 @@ class IntegrationAPI:
         if msg == uc.WsMessages.GET_DRIVER_VERSION:
             await self._send_response(websocket, req_id, uc.WsMsgEvents.DRIVER_VERSION, self.get_driver_version())
         elif msg == uc.WsMessages.GET_DEVICE_STATE:
-            await self._send_response(websocket, req_id, uc.WsMsgEvents.DEVICE_STATE, self.state)
+            await self._send_response(websocket, req_id, uc.WsMsgEvents.DEVICE_STATE, {"state": self.state})
         elif msg == uc.WsMessages.GET_AVAILABLE_ENTITIES:
             available_entities = self._available_entities.get_all()
             await self._send_response(
