@@ -13,7 +13,7 @@ Requires Python 3.10 or newer
 ---
 
 ### Local testing:
-```console
+```shell
 python3 setup.py bdist_wheel
 pip3 install --force-reinstall dist/ucapi-$VERSION-py3-none-any.whl
 ```
@@ -24,7 +24,7 @@ pip3 install --force-reinstall dist/ucapi-$VERSION-py3-none-any.whl
 - Use double quotes as default (don't mix and match for simple quoting, checked with pylint).
 
 Install tooling:
-```console
+```shell
 pip3 install -r test-requirements.txt
 ```
 
@@ -32,7 +32,7 @@ pip3 install -r test-requirements.txt
 
 The following tests are run as GitHub action for each push on the main branch and for pull requests.
 They can also be run anytime on a local developer machine:
-```console
+```shell
 python -m pylint ucapi
 python -m flake8 ucapi --count --show-source --statistics
 python -m isort ucapi/. --check --verbose 
@@ -44,7 +44,7 @@ Linting integration in PyCharm/IntelliJ IDEA:
 2. Open Pylint window and run a scan: `Check Module` or `Check Current File`
 
 ### Format Code
-```console
+```shell
 python -m black ucapi --line-length 120
 ```
 
@@ -57,6 +57,6 @@ PyCharm/IntelliJ IDEA integration:
 
 ### Sort Imports
 
-```console
+```shell
 python -m isort ucapi/.
 ```
