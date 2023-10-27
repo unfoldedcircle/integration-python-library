@@ -27,10 +27,10 @@ class Entities:
         :param identifier: storage identifier.
         :param loop: event loop
         """
-        self.id = identifier
+        self._id = identifier
         self._loop = loop
         self._storage = {}
-        self.events = AsyncIOEventEmitter(self._loop)
+        self._events = AsyncIOEventEmitter(self._loop)
 
     def contains(self, entity_id: str) -> bool:
         """Check if storage contains an entity with given identifier."""
@@ -39,7 +39,7 @@ class Entities:
     def get(self, entity_id: str) -> Entity | None:
         """Retrieve entity with given identifier."""
         if entity_id not in self._storage:
-            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
+            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self._id, entity_id)
             return None
 
         return self._storage[entity_id]
@@ -47,40 +47,40 @@ class Entities:
     def add(self, entity: Entity) -> bool:
         """Add entity to storage."""
         if entity.id in self._storage:
-            _LOG.debug("ENTITIES(%s): Entity already exists with id: %s", self.id, entity.id)
+            _LOG.debug("ENTITIES(%s): Entity already exists with id: %s", self._id, entity.id)
             return False
 
         self._storage[entity.id] = entity
-        _LOG.debug("ENTITIES(%s): Entity added with id: %s", self.id, entity.id)
+        _LOG.debug("ENTITIES(%s): Entity added with id: %s", self._id, entity.id)
         return True
 
     def remove(self, entity_id: str) -> bool:
         """Remove entity from storage."""
         if entity_id not in self._storage:
-            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
+            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self._id, entity_id)
             return True
 
         del self._storage[entity_id]
-        _LOG.debug("ENTITIES(%s): Entity deleted with id: %s", self.id, entity_id)
+        _LOG.debug("ENTITIES(%s): Entity deleted with id: %s", self._id, entity_id)
         return True
 
     def update_attributes(self, entity_id: str, attributes: dict) -> bool:
         """Update entity attributes."""
         if entity_id not in self._storage:
-            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self.id, entity_id)
+            _LOG.debug("ENTITIES(%s): Entity does not exists with id: %s", self._id, entity_id)
             return False
 
         for key in attributes:
             self._storage[entity_id].attributes[key] = attributes[key]
 
-        self.events.emit(
+        self._events.emit(
             Events.ENTITY_ATTRIBUTES_UPDATED,
             entity_id,
             self._storage[entity_id].entity_type,
             attributes,
         )
 
-        _LOG.debug("ENTITIES(%s): Entity attributes updated with id: %s", self.id, entity_id)
+        _LOG.debug("ENTITIES(%s): Entity attributes updated with id: %s", self._id, entity_id)
         return True
 
     def get_all(self) -> list[dict[str, any]]:
@@ -125,3 +125,17 @@ class Entities:
     def clear(self):
         """Remove all entities from storage."""
         self._storage = {}
+
+    ##############
+    # Properties #
+    ##############
+    # TODO redesign event callback: don't expose AsyncIOEventEmitter! The client may not emit events!!!
+    @property
+    def events(self) -> AsyncIOEventEmitter:
+        """Return event emitter."""
+        return self._events
+
+    @property
+    def id(self) -> str:
+        """Return storage identifier."""
+        return self._id
