@@ -9,6 +9,7 @@ Climate entity definitions.
 from enum import Enum
 from typing import Any
 
+from ucapi.api_definitions import CommandHandler
 from ucapi.entity import Entity, EntityTypes
 
 
@@ -90,6 +91,7 @@ class Climate(Entity):
         device_class: str | None = None,
         options: dict[str, Any] | None = None,
         area: str | None = None,
+        cmd_handler: CommandHandler = None,
     ):
         """
         Create a climate-entity instance.
@@ -101,14 +103,8 @@ class Climate(Entity):
         :param device_class: optional climate device class
         :param options: options
         :param area: optional area
+        :param cmd_handler: handler for entity commands
         """
         super().__init__(
-            identifier,
-            name,
-            EntityTypes.CLIMATE,
-            features,
-            attributes,
-            device_class,
-            options,
-            area,
+            identifier, name, EntityTypes.CLIMATE, features, attributes, device_class, options, area, cmd_handler
         )

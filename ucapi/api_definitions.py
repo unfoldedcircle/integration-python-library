@@ -6,6 +6,7 @@ API definitions.
 """
 
 from enum import Enum, IntEnum
+from typing import Any, Awaitable, Callable, TypeAlias
 
 
 class DeviceStates(str, Enum):
@@ -24,7 +25,10 @@ class StatusCodes(IntEnum):
     BAD_REQUEST = 400
     UNAUTHORIZED = 401
     NOT_FOUND = 404
+    TIMEOUT = 408
+    CONFLICT = 409
     SERVER_ERROR = 500
+    NOT_IMPLEMENTED = 501
     SERVICE_UNAVAILABLE = 503
 
 
@@ -66,7 +70,6 @@ class WsMsgEvents(str, Enum):
 class Events(str, Enum):
     """Internal library events."""
 
-    ENTITY_COMMAND = "entity_command"
     ENTITY_ATTRIBUTES_UPDATED = "entity_attributes_updated"
     SUBSCRIBE_ENTITIES = "subscribe_entities"
     UNSUBSCRIBE_ENTITIES = "unsubscribe_entities"
@@ -86,3 +89,6 @@ class EventCategory(str, Enum):
 
     DEVICE = "DEVICE"
     ENTITY = "ENTITY"
+
+
+CommandHandler: TypeAlias = Callable[[Any, str, dict[str, Any] | None], Awaitable[StatusCodes]]

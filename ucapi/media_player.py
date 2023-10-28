@@ -9,6 +9,7 @@ Media-player entity definitions.
 from enum import Enum
 from typing import Any
 
+from ucapi.api_definitions import CommandHandler
 from ucapi.entity import Entity, EntityTypes
 
 
@@ -164,6 +165,7 @@ class MediaPlayer(Entity):
         device_class: DeviceClasses | None = None,
         options: dict[str, Any] | None = None,
         area: str | None = None,
+        cmd_handler: CommandHandler = None,
     ):
         """
         Create media-player entity instance.
@@ -175,14 +177,8 @@ class MediaPlayer(Entity):
         :param device_class: optional media-player device class
         :param options: options
         :param area: optional area
+        :param cmd_handler: handler for entity commands
         """
         super().__init__(
-            identifier,
-            name,
-            EntityTypes.MEDIA_PLAYER,
-            features,
-            attributes,
-            device_class,
-            options,
-            area,
+            identifier, name, EntityTypes.MEDIA_PLAYER, features, attributes, device_class, options, area, cmd_handler
         )

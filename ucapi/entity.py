@@ -9,6 +9,8 @@ import logging
 from enum import Enum
 from typing import Any
 
+from ucapi.api_definitions import CommandHandler, StatusCodes
+
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
 
@@ -43,6 +45,7 @@ class Entity:
         device_class: str | None,
         options: dict[str, Any] | None,
         area: str | None = None,
+        cmd_handler: CommandHandler = None,
     ):
         """
         Initialize entity.
@@ -65,5 +68,24 @@ class Entity:
         self.device_class = device_class
         self.options = options
         self.area = area
+        self.cmd_handler = cmd_handler
 
         _LOG.debug("Created %s entity: %s", self.entity_type.value, self.id)
+
+    async def command(self, cmd_id: str, params: dict[str, Any] | None = None) -> StatusCodes:
+        """
+        Execute entity command with the installed command handler.
+
+        Returns NOT_IMPLEMENTED if no command handler is installed.
+
+        :param cmd_id: the command
+        :param params: optional command parameters
+        :return: command status code to acknowledge to UCR2
+        """
+        if self.cmd_handler:
+            return await self.cmd_handler(self, cmd_id, params)
+
+        _LOG.warning(
+            "No command handler for %s: cannot execute command '%s' %s", self.id, cmd_id, params if params else ""
+        )
+        return StatusCodes.NOT_IMPLEMENTED

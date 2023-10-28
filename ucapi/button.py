@@ -7,6 +7,7 @@ Button entity definitions.
 
 from enum import Enum
 
+from ucapi.api_definitions import CommandHandler
 from ucapi.entity import Entity, EntityTypes
 
 
@@ -37,13 +38,20 @@ class Button(Entity):
     for more information.
     """
 
-    def __init__(self, identifier: str, name: str | dict[str, str], area: str | None = None):
+    def __init__(
+        self,
+        identifier: str,
+        name: str | dict[str, str],
+        area: str | None = None,
+        cmd_handler: CommandHandler = None,
+    ):
         """
         Create button-entity instance.
 
         :param identifier: entity identifier
         :param name: friendly name, either a string or a language dictionary
         :param area: optional area name
+        :param cmd_handler: handler for entity commands
         """
         super().__init__(
             identifier,
@@ -54,4 +62,5 @@ class Button(Entity):
             None,
             None,
             area,
+            cmd_handler,
         )

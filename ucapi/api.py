@@ -402,18 +402,26 @@ class IntegrationAPI:
         return res
 
     async def _entity_command(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> None:
-        if msg_data is None:
+        if not msg_data:
             _LOG.warning("Ignoring _entity_command: called with empty msg_data")
+            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.BAD_REQUEST)
             return
-        self._events.emit(
-            uc.Events.ENTITY_COMMAND,
-            websocket,
-            req_id,
-            msg_data["entity_id"],
-            msg_data["entity_type"],
-            msg_data["cmd_id"],
-            msg_data["params"] if "params" in msg_data else None,
-        )
+
+        entity_id = msg_data["entity_id"] if "entity_id" in msg_data else None
+        cmd_id = msg_data["cmd_id"] if "cmd_id" in msg_data else None
+        if entity_id is None or cmd_id is None:
+            _LOG.warning("Ignoring command: missing entity_id or cmd_id")
+            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.BAD_REQUEST)
+            return
+
+        entity = self.configured_entities.get(entity_id)
+        if entity is None:
+            _LOG.warning("Cannot execute command '%s' for '%s': no configured entity found", cmd_id, entity_id)
+            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.NOT_FOUND)
+            return
+
+        result = await entity.command(cmd_id, msg_data["params"] if "params" in msg_data else None)
+        await self.acknowledge_command(websocket, req_id, result)
 
     async def _setup_driver(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> None:
         if msg_data is None:
@@ -492,7 +500,9 @@ class IntegrationAPI:
 
         await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
-    async def request_driver_setup_user_input(self, websocket, title, settings: dict[str, Any] | list) -> None:
+    async def request_driver_setup_user_input(
+        self, websocket, title: str | dict[str, str], settings: dict[str, Any] | list
+    ) -> None:
         """Request a user input during the driver setup process."""
         data = {
             "event_type": "SETUP",
@@ -522,6 +532,15 @@ class IntegrationAPI:
         :param f: callback handler
         """
         self._events.add_listener(event, f)
+
+    def listens_to(self, event: str) -> Callable[[Callable], Callable]:
+        """Return a decorator which will register the decorated function to the specified event."""
+
+        def on(f: Callable) -> Callable:
+            self._events.add_listener(event, f)
+            return f
+
+        return on
 
     def remove_listener(self, event: uc.Events, f: Callable) -> None:
         """

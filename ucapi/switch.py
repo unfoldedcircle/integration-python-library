@@ -8,6 +8,7 @@ Switch entity definitions.
 from enum import Enum
 from typing import Any
 
+from ucapi.api_definitions import CommandHandler
 from ucapi.entity import Entity, EntityTypes
 
 
@@ -71,6 +72,7 @@ class Switch(Entity):
         device_class: DeviceClasses | None = None,
         options: dict[str, Any] | None = None,
         area: str | None = None,
+        cmd_handler: CommandHandler = None,
     ):
         """
         Create switch-entity instance.
@@ -82,6 +84,7 @@ class Switch(Entity):
         :param device_class: optional switch device class
         :param options: options
         :param area: optional area
+        :param cmd_handler: handler for entity commands
         """
         super().__init__(
             identifier,
@@ -92,4 +95,5 @@ class Switch(Entity):
             device_class,
             options,
             area,
+            cmd_handler,
         )

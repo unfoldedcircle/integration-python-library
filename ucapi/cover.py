@@ -9,6 +9,7 @@ Cover entity definitions.
 from enum import Enum
 from typing import Any
 
+from ucapi.api_definitions import CommandHandler
 from ucapi.entity import Entity, EntityTypes
 
 
@@ -89,6 +90,7 @@ class Cover(Entity):
         device_class: DeviceClasses | None = None,
         options: dict[str, Any] | None = None,
         area: str | None = None,
+        cmd_handler: CommandHandler = None,
     ):
         """
         Create cover-entity instance.
@@ -100,6 +102,7 @@ class Cover(Entity):
         :param device_class: optional cover device class
         :param options: options
         :param area: optional area
+        :param cmd_handler: handler for entity commands
         """
         super().__init__(
             identifier,
@@ -110,4 +113,5 @@ class Cover(Entity):
             device_class,
             options,
             area,
+            cmd_handler,
         )
