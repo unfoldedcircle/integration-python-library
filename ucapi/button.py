@@ -37,7 +37,7 @@ class Button(Entity):
     for more information.
     """
 
-    def __init__(self, identifier: str, name: str | dict, area: str | None = None):
+    def __init__(self, identifier: str, name: str | dict[str, str], area: str | None = None):
         """
         Create button-entity instance.
 

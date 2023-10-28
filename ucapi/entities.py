@@ -7,6 +7,7 @@ Entity store.
 
 import logging
 from asyncio import AbstractEventLoop
+from typing import Any
 
 from pyee import AsyncIOEventEmitter
 
@@ -27,10 +28,9 @@ class Entities:
         :param identifier: storage identifier.
         :param loop: event loop
         """
-        self._id = identifier
-        self._loop = loop
+        self._id: str = identifier
         self._storage = {}
-        self._events = AsyncIOEventEmitter(self._loop)
+        self._events = AsyncIOEventEmitter(loop)
 
     def contains(self, entity_id: str) -> bool:
         """Check if storage contains an entity with given identifier."""
@@ -39,7 +39,7 @@ class Entities:
     def get(self, entity_id: str) -> Entity | None:
         """Retrieve entity with given identifier."""
         if entity_id not in self._storage:
-            _LOG.debug("[%s]: entity not found with id: %s", self._id, entity_id)
+            _LOG.debug("[%s]: entity not found with id: '%s'", self._id, entity_id)
             return None
 
         return self._storage[entity_id]
@@ -47,27 +47,27 @@ class Entities:
     def add(self, entity: Entity) -> bool:
         """Add entity to storage."""
         if entity.id in self._storage:
-            _LOG.debug("[%s]: entity already exists with id: %s", self._id, entity.id)
+            _LOG.debug("[%s] entity already exists with id: '%s'", self._id, entity.id)
             return False
 
         self._storage[entity.id] = entity
-        _LOG.debug("[%s]: entity added with id: %s", self._id, entity.id)
+        _LOG.debug("[%s] entity added with id: '%s'", self._id, entity.id)
         return True
 
     def remove(self, entity_id: str) -> bool:
         """Remove entity from storage."""
         if entity_id not in self._storage:
-            _LOG.debug("[%s]: entity not found with id: %s", self._id, entity_id)
+            _LOG.debug("[%s] cannot remove entity '%s': not found", self._id, entity_id)
             return True
 
         del self._storage[entity_id]
-        _LOG.debug("[%s]: entity deleted with id: %s", self._id, entity_id)
+        _LOG.debug("[%s] entity deleted with id: %s", self._id, entity_id)
         return True
 
-    def update_attributes(self, entity_id: str, attributes: dict) -> bool:
+    def update_attributes(self, entity_id: str, attributes: dict[str, Any]) -> bool:
         """Update entity attributes."""
         if entity_id not in self._storage:
-            _LOG.debug("[%s]: entity not found with id: %s", self._id, entity_id)
+            _LOG.debug("[%s] cannot update entity attributes '%s': not found", self._id, entity_id)
             return False
 
         for key in attributes:
@@ -83,7 +83,7 @@ class Entities:
         _LOG.debug("[%s]: entity '%s' attributes updated", self._id, entity_id)
         return True
 
-    def get_all(self) -> list[dict[str, any]]:
+    def get_all(self) -> list[dict[str, Any]]:
         """
         Get all entity information in storage.
 
@@ -106,7 +106,7 @@ class Entities:
 
         return entities
 
-    async def get_states(self) -> list[dict[str, any]]:
+    async def get_states(self) -> list[dict[str, Any]]:
         """Get all entity information with entity_id, entity_type, device_id, attributes."""
         entities = []
 

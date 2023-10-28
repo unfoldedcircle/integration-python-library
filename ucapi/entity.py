@@ -7,6 +7,7 @@ Entity definitions.
 
 import logging
 from enum import Enum
+from typing import Any
 
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
@@ -35,12 +36,12 @@ class Entity:
     def __init__(
         self,
         identifier: str,
-        name: str | dict,
+        name: str | dict[str, str],
         entity_type: EntityTypes,
         features: list[str],
-        attributes: dict,
+        attributes: dict[str, Any],
         device_class: str | None,
-        options: dict | None,
+        options: dict[str, Any] | None,
         area: str | None = None,
     ):
         """

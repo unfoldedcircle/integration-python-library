@@ -7,6 +7,7 @@ Cover entity definitions.
 """
 
 from enum import Enum
+from typing import Any
 
 from ucapi.entity import Entity, EntityTypes
 
@@ -82,11 +83,11 @@ class Cover(Entity):
     def __init__(
         self,
         identifier: str,
-        name: str | dict,
+        name: str | dict[str, str],
         features: list[Features],
-        attributes: dict,
+        attributes: dict[str, Any],
         device_class: DeviceClasses | None = None,
-        options: dict | None = None,
+        options: dict[str, Any] | None = None,
         area: str | None = None,
     ):
         """
