@@ -7,9 +7,9 @@ Entity store.
 
 import logging
 from asyncio import AbstractEventLoop
-from typing import Any
+from typing import Any, Callable
 
-from pyee import AsyncIOEventEmitter
+from pyee.asyncio import AsyncIOEventEmitter
 
 from ucapi.api_definitions import Events
 from ucapi.entity import Entity
@@ -126,14 +126,37 @@ class Entities:
         """Remove all entities from storage."""
         self._storage = {}
 
+    def add_listener(self, event: Events, f: Callable) -> None:
+        """
+        Register a callback handler for the given event.
+
+        :param event: the event
+        :param f: callback handler
+        """
+        self._events.add_listener(event, f)
+
+    def remove_listener(self, event: Events, f: Callable) -> None:
+        """
+        Remove the callback handler for the given event.
+
+        :param event: the event
+        :param f: callback handler
+        """
+        self._events.remove_listener(event, f)
+
+    def remove_all_listeners(self, event: Events | None) -> None:
+        """
+        Remove all listeners attached to ``event``.
+
+        If ``event`` is ``None``, remove all listeners on all events.
+
+        :param event: the event
+        """
+        self._events.remove_all_listeners(event)
+
     ##############
     # Properties #
     ##############
-    # TODO redesign event callback: don't expose AsyncIOEventEmitter! The client may not emit events!!!
-    @property
-    def events(self) -> AsyncIOEventEmitter:
-        """Return event emitter."""
-        return self._events
 
     @property
     def id(self) -> str:

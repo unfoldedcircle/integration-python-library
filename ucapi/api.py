@@ -11,10 +11,10 @@ import logging
 import os
 import socket
 from asyncio import AbstractEventLoop
-from typing import Any
+from typing import Any, Callable
 
 import websockets
-from pyee import AsyncIOEventEmitter
+from pyee.asyncio import AsyncIOEventEmitter
 
 # workaround for pylint error: E0611: No name 'ConnectionClosedOK' in module 'websockets' (no-name-in-module)
 from websockets.exceptions import ConnectionClosedOK
@@ -70,15 +70,7 @@ class IntegrationAPI:
         self._driver_path = driver_path
         self._port = self._driver_info["port"] if "port" in self._driver_info else self._port
 
-        @self._configured_entities.events.on(uc.Events.ENTITY_ATTRIBUTES_UPDATED)
-        async def event_handler(entity_id, entity_type, attributes):
-            data = {
-                "entity_id": entity_id,
-                "entity_type": entity_type,
-                "attributes": attributes,
-            }
-
-            await self._broadcast_ws_event(uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY)
+        self._configured_entities.add_listener(uc.Events.ENTITY_ATTRIBUTES_UPDATED, self._on_entity_attributes_updated)
 
         # Load driver config
         with open(self._driver_path, "r", encoding="utf-8") as file:
@@ -127,6 +119,15 @@ class IntegrationAPI:
             self._driver_info["version"],
             self._driver_info["driver_url"],
         )
+
+    async def _on_entity_attributes_updated(self, entity_id, entity_type, attributes):
+        data = {
+            "entity_id": entity_id,
+            "entity_type": entity_type,
+            "attributes": attributes,
+        }
+
+        await self._broadcast_ws_event(uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY)
 
     def _get_driver_url(self, driver_url: str | None, port: int | str) -> str | None:
         if driver_url is not None:
@@ -513,14 +514,37 @@ class IntegrationAPI:
 
         await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
 
+    def add_listener(self, event: uc.Events, f: Callable) -> None:
+        """
+        Register a callback handler for the given event.
+
+        :param event: the event
+        :param f: callback handler
+        """
+        self._events.add_listener(event, f)
+
+    def remove_listener(self, event: uc.Events, f: Callable) -> None:
+        """
+        Remove the callback handler for the given event.
+
+        :param event: the event
+        :param f: callback handler
+        """
+        self._events.remove_listener(event, f)
+
+    def remove_all_listeners(self, event: uc.Events | None) -> None:
+        """
+        Remove all listeners attached to ``event``.
+
+        If ``event`` is ``None``, remove all listeners on all events.
+
+        :param event: the event
+        """
+        self._events.remove_all_listeners(event)
+
     ##############
     # Properties #
     ##############
-    # TODO redesign event callback: don't expose AsyncIOEventEmitter! The client may not emit events!!!
-    @property
-    def events(self) -> AsyncIOEventEmitter:
-        """Return event emitter."""
-        return self._events
 
     @property
     def device_state(self) -> uc.DeviceStates:
