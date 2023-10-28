@@ -66,4 +66,4 @@ class Entity:
         self.options = options
         self.area = area
 
-        _LOG.debug("Created %s entity with id: %s", self.entity_type.value, self.id)
+        _LOG.debug("Created %s entity: %s", self.entity_type.value, self.id)
