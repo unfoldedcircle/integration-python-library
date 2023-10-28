@@ -11,7 +11,7 @@ Integration driver library for Remote Two.
 import logging  # isort:skip
 
 from .api_definitions import DeviceStates, Events, StatusCodes  # isort:skip # noqa: F401
-from .entity import EntityTypes  # isort:skip # noqa: F401
+from .entity import Entity, EntityTypes  # isort:skip # noqa: F401
 from .entities import Entities  # isort:skip # noqa: F401
 from .api import IntegrationAPI  # isort:skip # noqa: F401
 
