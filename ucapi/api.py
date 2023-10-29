@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Integration driver API for Remote Two.
 
@@ -49,7 +50,7 @@ class IntegrationAPI:
         self._server_task = None
         self._clients = set()
 
-        self._config_dir_path: str | None = os.getenv("UC_CONFIG_HOME")
+        self._config_dir_path: str = os.getenv("UC_CONFIG_HOME") or os.getenv("HOME") or "./"
 
         self._available_entities = Entities("available", self._loop)
         self._configured_entities = Entities("configured", self._loop)
@@ -628,7 +629,7 @@ class IntegrationAPI:
         return self._state
 
     @property
-    def config_dir_path(self) -> str | None:
+    def config_dir_path(self) -> str:
         """Return configuration directory path."""
         return self._config_dir_path
 
