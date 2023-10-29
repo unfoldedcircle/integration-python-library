@@ -68,7 +68,7 @@ class Entity:
         self.device_class = device_class
         self.options = options
         self.area = area
-        self.cmd_handler = cmd_handler
+        self._cmd_handler = cmd_handler
 
         _LOG.debug("Created %s entity: %s", self.entity_type.value, self.id)
 
@@ -82,8 +82,8 @@ class Entity:
         :param params: optional command parameters
         :return: command status code to acknowledge to UCR2
         """
-        if self.cmd_handler:
-            return await self.cmd_handler(self, cmd_id, params)
+        if self._cmd_handler:
+            return await self._cmd_handler(self, cmd_id, params)
 
         _LOG.warning(
             "No command handler for %s: cannot execute command '%s' %s", self.id, cmd_id, params if params else ""

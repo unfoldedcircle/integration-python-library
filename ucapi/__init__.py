@@ -10,7 +10,21 @@ Integration driver library for Remote Two.
 # Set default logging handler to avoid "No handler found" warnings.
 import logging  # isort:skip
 
-from .api_definitions import DeviceStates, Events, StatusCodes  # isort:skip # noqa: F401
+from .api_definitions import (  # isort:skip # noqa: F401
+    DeviceStates,
+    DriverSetupRequest,
+    Events,
+    IntegrationSetupError,
+    RequestUserConfirmation,
+    RequestUserInput,
+    SetupAction,
+    SetupComplete,
+    SetupDriver,
+    SetupError,
+    StatusCodes,
+    UserConfirmationResponse,
+    UserDataResponse,
+)
 from .entity import Entity, EntityTypes  # isort:skip # noqa: F401
 from .entities import Entities  # isort:skip # noqa: F401
 from .api import IntegrationAPI  # isort:skip # noqa: F401
