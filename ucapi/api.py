@@ -49,11 +49,6 @@ class IntegrationAPI:
         self._server_task = None
         self._clients = set()
 
-        self._interface: str | None = os.getenv("UC_INTEGRATION_INTERFACE")
-        self._port: int | str | None = os.getenv("UC_INTEGRATION_HTTP_PORT")
-        self._https_enabled: bool = os.getenv("UC_INTEGRATION_HTTPS_ENABLED", "false").lower() in ("true", "1")
-        self._disable_mdns_publish: bool = os.getenv("UC_DISABLE_MDNS_PUBLISH", "false").lower() in ("true", "1")
-
         self._config_dir_path: str | None = os.getenv("UC_CONFIG_HOME")
 
         self._available_entities = Entities("available", self._loop)
@@ -70,7 +65,6 @@ class IntegrationAPI:
         :param setup_handler: optional driver setup handler if the driver metadata contains a setup_data_schema object
         """
         self._driver_path = driver_path
-        self._port = self._driver_info["port"] if "port" in self._driver_info else self._port
         self._setup_handler = setup_handler
 
         self._configured_entities.add_listener(uc.Events.ENTITY_ATTRIBUTES_UPDATED, self._on_entity_attributes_updated)
@@ -79,48 +73,48 @@ class IntegrationAPI:
         with open(self._driver_path, "r", encoding="utf-8") as file:
             self._driver_info = json.load(file)
 
-        # Set driver URL
-        # TODO verify _get_driver_url: logic might not be correct,
-        #      move all parameter logic inside method to better understand what this does
-        self._driver_info["driver_url"] = self._get_driver_url(
-            self._driver_info["driver_url"] if "driver_url" in self._driver_info else self._interface, self._port
+        # publishing interface, defaults to "0.0.0.0" if not set
+        interface = os.getenv("UC_INTEGRATION_INTERFACE")
+        port = int(
+            os.getenv("UC_INTEGRATION_HTTP_PORT") or self._driver_info["port"] if "port" in self._driver_info else 9090
         )
 
-        # Set driver name
-        name = _get_default_language_string(self._driver_info["name"], "Unknown driver")
-        # TODO there seems to be missing something with `url`
-        # url = self._interface
+        _adjust_driver_url(self._driver_info, port)
 
-        # TODO: add support for secured WS
-        addr = (
-            socket.gethostbyname(socket.gethostname()) if self._driver_info["driver_url"] is None else self._interface
-        )
+        disable_mdns_publish = os.getenv("UC_DISABLE_MDNS_PUBLISH", "false").lower() in ("true", "1")
 
-        # addr = address if address else None
-
-        if self._disable_mdns_publish is False:
+        if disable_mdns_publish is False:
             # Setup zeroconf service info
+            name = f"{self._driver_info['driver_id']}._uc-integration._tcp.local."
+            hostname = local_hostname()
+            driver_name = _get_default_language_string(self._driver_info["name"], "Unknown driver")
+
+            _LOG.debug("Publishing driver: name=%s, host=%s:%d", name, hostname, port)
+
             info = AsyncServiceInfo(
                 "_uc-integration._tcp.local.",
-                f"{self._driver_info['driver_id']}._uc-integration._tcp.local.",
-                addresses=[addr] if addr else None,
-                port=int(self._port),
+                name,
+                addresses=[interface] if interface else None,
+                port=port,
                 properties={
-                    "name": name,
+                    "name": driver_name,
                     "ver": self._driver_info["version"],
                     "developer": self._driver_info["developer"]["name"],
                 },
+                server=hostname,
             )
             zeroconf = AsyncZeroconf(ip_version=IPVersion.V4Only)
             await zeroconf.async_register_service(info)
 
-        self._server_task = self._loop.create_task(self._start_web_socket_server())
+        host = interface if interface is not None else "0.0.0.0"
+        self._server_task = self._loop.create_task(self._start_web_socket_server(host, port))
 
         _LOG.info(
-            "Driver is up: %s, version: %s, listening on: %s",
+            "Driver is up: %s, version: %s, listening on: %s:%d",
             self._driver_info["driver_id"],
             self._driver_info["version"],
-            self._driver_info["driver_url"],
+            host,
+            port,
         )
 
     async def _on_entity_attributes_updated(self, entity_id, entity_type, attributes):
@@ -132,17 +126,8 @@ class IntegrationAPI:
 
         await self._broadcast_ws_event(uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY)
 
-    def _get_driver_url(self, driver_url: str | None, port: int | str) -> str | None:
-        if driver_url is not None:
-            if driver_url.startswith("ws://") or driver_url.startswith("wss://"):
-                return driver_url
-
-            return "ws://" + self._interface + ":" + port
-
-        return None
-
-    async def _start_web_socket_server(self) -> None:
-        async with serve(self._handle_ws, self._interface, int(self._port)):
+    async def _start_web_socket_server(self, host: str, port: int) -> None:
+        async with serve(self._handle_ws, host, port):
             await asyncio.Future()
 
     async def _handle_ws(self, websocket) -> None:
@@ -682,3 +667,48 @@ def _get_default_language_string(text: str | dict[str, str] | None, default_text
             return text[key]
 
     return default_text
+
+
+def _adjust_driver_url(driver_info: dict[str, Any], port: int) -> str | None:
+    """
+    Adjust the driver_url field in the driver metadata.
+
+    By default, the ``driver_url`` is not set in the metadata file. It is used
+    to overwrite the published URL by mDNS. UCR2 uses the driver URL from mDNS
+    if ``driver_url`` in the metadata file is missing.
+
+    Adjustment:
+    - do nothing if driver url isn't set
+    - leave driver url as-is if it is starting with ``ws://`` or ``wss://``
+    - otherwise dynamically set from determined os hostname and port setting
+
+    :param driver_info: driver metadata
+    :param port: WebSocket server port
+    :return: adjusted driver url or None
+    """
+    driver_url = driver_info["driver_url"] if "driver_url" in driver_info else None
+
+    if driver_url is None:
+        return None
+
+    if driver_url.startswith("ws://") or driver_url.startswith("wss://"):
+        return driver_url
+
+    host = socket.gethostname()
+    driver_info["driver_url"] = f"ws://{host}:{port}"
+    return driver_info["driver_url"]
+
+
+def local_hostname() -> str:
+    """
+    Get the local hostname for mDNS publishing.
+
+    Overridable by environment variable ``UC_INTEGRATION_MDNS_LOCAL_HOSTNAME``.
+
+    :return: the local hostname
+    """
+    # Override option for announced hostname.
+    # Useful on macOS where it's broken for several years: local hostname keeps on changing!
+    # https://apple.stackexchange.com/questions/189350/my-macs-hostname-keeps-adding-a-2-to-the-end
+
+    return os.getenv("UC_INTEGRATION_MDNS_LOCAL_HOSTNAME") or f"{socket.gethostname().split('.', 1)[0]}.local."
