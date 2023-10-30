@@ -447,7 +447,7 @@ class IntegrationAPI:
                 return True
 
             # error action is left, handled below
-        except Exception as ex:  # TODO define custom exceptions?
+        except Exception as ex:  # pylint: disable=W0718  # TODO define custom exceptions?
             _LOG.error("Exception in setup handler, aborting setup! Exception: %s", ex)
 
         return False
@@ -486,7 +486,7 @@ class IntegrationAPI:
                 return True
 
             # error action is left, handled below
-        except Exception as ex:  # TODO define custom exceptions?
+        except Exception as ex:  # pylint: disable=W0718  # TODO define custom exceptions?
             _LOG.error("Exception in setup handler, aborting setup! Exception: %s", ex)
 
         return False
