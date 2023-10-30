@@ -704,7 +704,7 @@ def local_hostname() -> str:
     """
     Get the local hostname for mDNS publishing.
 
-    Overridable by environment variable ``UC_INTEGRATION_MDNS_LOCAL_HOSTNAME``.
+    Overridable by environment variable ``UC_MDNS_LOCAL_HOSTNAME``.
 
     :return: the local hostname
     """
@@ -712,4 +712,4 @@ def local_hostname() -> str:
     # Useful on macOS where it's broken for several years: local hostname keeps on changing!
     # https://apple.stackexchange.com/questions/189350/my-macs-hostname-keeps-adding-a-2-to-the-end
 
-    return os.getenv("UC_INTEGRATION_MDNS_LOCAL_HOSTNAME") or f"{socket.gethostname().split('.', 1)[0]}.local."
+    return os.getenv("UC_MDNS_LOCAL_HOSTNAME") or f"{socket.gethostname().split('.', 1)[0]}.local."

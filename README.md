@@ -29,13 +29,13 @@ More examples will be published.
 
 Certain features can be configured by environment variables:
 
-| Variable                           | Values           | Description                                                                                                          |
-|------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------------|
-| UC_CONFIG_HOME                     | _directory path_ | Configuration directory to save the user configuration from the driver setup.<br>Default: $HOME or current directory |
-| UC_INTEGRATION_INTERFACE           | _address_        | Listening interface for WebSocket server.<br>Default: `0.0.0.0`                                                      |
-| UC_INTEGRATION_HTTP_PORT           | _number_         | WebSocket listening port.<br>Default: `port` field in driver metadata json file, if not specified: `9090`            |
-| UC_INTEGRATION_MDNS_LOCAL_HOSTNAME | _hostname_       | Published local hostname in mDNS service announcement.<br>Default: _short hostname_ with `.local` domain.            |
-| UC_DISABLE_MDNS_PUBLISH            | `true` / `false` | Disables mDNS service advertisement.<br>Default: `false`                                                             |
+| Variable                 | Values           | Description                                                                                                          |
+|--------------------------|------------------|----------------------------------------------------------------------------------------------------------------------|
+| UC_CONFIG_HOME           | _directory path_ | Configuration directory to save the user configuration from the driver setup.<br>Default: $HOME or current directory |
+| UC_INTEGRATION_INTERFACE | _address_        | Listening interface for WebSocket server.<br>Default: `0.0.0.0`                                                      |
+| UC_INTEGRATION_HTTP_PORT | _number_         | WebSocket listening port.<br>Default: `port` field in driver metadata json file, if not specified: `9090`            |
+| UC_MDNS_LOCAL_HOSTNAME   | _hostname_       | Published local hostname in mDNS service announcement.<br>Default: _short hostname_ with `.local` domain.            |
+| UC_DISABLE_MDNS_PUBLISH  | `true` / `false` | Disables mDNS service advertisement.<br>Default: `false`                                                             |
 
 ## Versioning
 
