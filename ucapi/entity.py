@@ -2,13 +2,20 @@
 Entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
+import logging
 from enum import Enum
+from typing import Any
+
+from ucapi.api_definitions import CommandHandler, StatusCodes
+
+_LOG = logging.getLogger(__name__)
+_LOG.setLevel(logging.DEBUG)
 
 
-class TYPES(str, Enum):
+class EntityTypes(str, Enum):
     """Entity types."""
 
     COVER = "cover"
@@ -31,13 +38,14 @@ class Entity:
     def __init__(
         self,
         identifier: str,
-        name: str | dict,
-        entity_type: TYPES,
+        name: str | dict[str, str],
+        entity_type: EntityTypes,
         features: list[str],
-        attributes: dict,
+        attributes: dict[str, Any],
         device_class: str | None,
-        options: dict | None,
+        options: dict[str, Any] | None,
         area: str | None = None,
+        cmd_handler: CommandHandler = None,
     ):
         """
         Initialize entity.
@@ -53,10 +61,31 @@ class Entity:
         """
         self.id = identifier
         self.name = {"en": name} if isinstance(name, str) else name
-        self.entityType = entity_type
-        self.deviceId = None
+        self.entity_type = entity_type
+        self.device_id = None
         self.features = features
         self.attributes = attributes
-        self.deviceClass = device_class
+        self.device_class = device_class
         self.options = options
         self.area = area
+        self._cmd_handler = cmd_handler
+
+        _LOG.debug("Created %s entity: %s", self.entity_type.value, self.id)
+
+    async def command(self, cmd_id: str, params: dict[str, Any] | None = None) -> StatusCodes:
+        """
+        Execute entity command with the installed command handler.
+
+        Returns NOT_IMPLEMENTED if no command handler is installed.
+
+        :param cmd_id: the command
+        :param params: optional command parameters
+        :return: command status code to acknowledge to UCR2
+        """
+        if self._cmd_handler:
+            return await self._cmd_handler(self, cmd_id, params)
+
+        _LOG.warning(
+            "No command handler for %s: cannot execute command '%s' %s", self.id, cmd_id, params if params else ""
+        )
+        return StatusCodes.NOT_IMPLEMENTED

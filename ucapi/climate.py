@@ -1,21 +1,19 @@
+# pylint: disable=R0801
 """
 Climate entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
-import logging
 from enum import Enum
+from typing import Any
 
-from ucapi.entity import TYPES, Entity
-
-logging.basicConfig()
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
+from ucapi.api_definitions import CommandHandler
+from ucapi.entity import Entity, EntityTypes
 
 
-class STATES(str, Enum):
+class States(str, Enum):
     """Climate entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -28,7 +26,7 @@ class STATES(str, Enum):
     AUTO = "AUTO"
 
 
-class FEATURES(str, Enum):
+class Features(str, Enum):
     """Climate entity features."""
 
     ON_OFF = "on_off"
@@ -40,7 +38,7 @@ class FEATURES(str, Enum):
     FAN = "fan"
 
 
-class ATTRIBUTES(str, Enum):
+class Attributes(str, Enum):
     """Climate entity attributes."""
 
     STATE = "state"
@@ -51,7 +49,7 @@ class ATTRIBUTES(str, Enum):
     FAN_MODE = "fan_mode"
 
 
-class COMMANDS(str, Enum):
+class Commands(str, Enum):
     """Climate entity commands."""
 
     ON = "on"
@@ -62,11 +60,11 @@ class COMMANDS(str, Enum):
     FAN_MODE = "fan_mode"
 
 
-class DEVICECLASSES(str, Enum):
+class DeviceClasses(str, Enum):
     """Climate entity device classes."""
 
 
-class OPTIONS(str, Enum):
+class Options(str, Enum):
     """Climate entity options."""
 
     TEMPERATURE_UNIT = "temperature_unit"
@@ -87,12 +85,13 @@ class Climate(Entity):
     def __init__(
         self,
         identifier: str,
-        name: str | dict,
-        features: list[FEATURES],
-        attributes: dict,
-        deviceClass: str | None = None,
-        options: dict | None = None,
+        name: str | dict[str, str],
+        features: list[Features],
+        attributes: dict[str, Any],
+        device_class: str | None = None,
+        options: dict[str, Any] | None = None,
         area: str | None = None,
+        cmd_handler: CommandHandler = None,
     ):
         """
         Create a climate-entity instance.
@@ -101,19 +100,11 @@ class Climate(Entity):
         :param name: friendly name
         :param features: climate features
         :param attributes: climate attributes
-        :param deviceClass: optional climate device class
+        :param device_class: optional climate device class
         :param options: options
         :param area: optional area
+        :param cmd_handler: handler for entity commands
         """
         super().__init__(
-            identifier,
-            name,
-            TYPES.CLIMATE,
-            features,
-            attributes,
-            deviceClass,
-            options,
-            area,
+            identifier, name, EntityTypes.CLIMATE, features, attributes, device_class, options, area, cmd_handler
         )
-
-        LOG.debug("Climate entity created with id: %s", self.id)

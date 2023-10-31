@@ -1,21 +1,19 @@
+# pylint: disable=R0801
 """
 Light entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
-import logging
 from enum import Enum
+from typing import Any
 
-from ucapi.entity import TYPES, Entity
-
-logging.basicConfig()
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
+from ucapi.api_definitions import CommandHandler
+from ucapi.entity import Entity, EntityTypes
 
 
-class STATES(str, Enum):
+class States(str, Enum):
     """Light entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -24,7 +22,7 @@ class STATES(str, Enum):
     OFF = "OFF"
 
 
-class FEATURES(str, Enum):
+class Features(str, Enum):
     """Light entity features."""
 
     ON_OFF = "on_off"
@@ -34,7 +32,7 @@ class FEATURES(str, Enum):
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class ATTRIBUTES(str, Enum):
+class Attributes(str, Enum):
     """Light entity attributes."""
 
     STATE = "state"
@@ -44,7 +42,7 @@ class ATTRIBUTES(str, Enum):
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class COMMANDS(str, Enum):
+class Commands(str, Enum):
     """Light entity commands."""
 
     ON = "on"
@@ -52,11 +50,11 @@ class COMMANDS(str, Enum):
     TOGGLE = "toggle"
 
 
-class DEVICECLASSES(str, Enum):
+class DeviceClasses(str, Enum):
     """Light entity device classes."""
 
 
-class OPTIONS(str, Enum):
+class Options(str, Enum):
     """Light entity options."""
 
     COLOR_TEMPERATURE_STEPS = "color_temperature_steps"
@@ -73,12 +71,13 @@ class Light(Entity):
     def __init__(
         self,
         identifier: str,
-        name: str | dict,
-        features: list[FEATURES],
-        attributes: dict,
-        deviceClass: DEVICECLASSES | None = None,
-        options: dict | None = None,
+        name: str | dict[str, str],
+        features: list[Features],
+        attributes: dict[str, Any],
+        device_class: DeviceClasses | None = None,
+        options: dict[str, Any] | None = None,
         area: str | None = None,
+        cmd_handler: CommandHandler = None,
     ):
         """
         Create light-entity instance.
@@ -87,19 +86,11 @@ class Light(Entity):
         :param name: friendly name
         :param features: light features
         :param attributes: light attributes
-        :param deviceClass: optional light device class
+        :param device_class: optional light device class
         :param options: options
         :param area: optional area
+        :param cmd_handler: handler for entity commands
         """
         super().__init__(
-            identifier,
-            name,
-            TYPES.LIGHT,
-            features,
-            attributes,
-            deviceClass,
-            options,
-            area,
+            identifier, name, EntityTypes.LIGHT, features, attributes, device_class, options, area, cmd_handler
         )
-
-        LOG.debug("Light entity created with id: %s", self.id)

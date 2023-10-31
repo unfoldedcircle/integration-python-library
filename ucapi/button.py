@@ -2,33 +2,29 @@
 Button entity definitions.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
-:license: MPL 2.0, see LICENSE for more details.
+:license: MPL-2.0, see LICENSE for more details.
 """
 
-import logging
 from enum import Enum
 
-from ucapi.entity import TYPES, Entity
-
-logging.basicConfig()
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
+from ucapi.api_definitions import CommandHandler
+from ucapi.entity import Entity, EntityTypes
 
 
-class STATES(str, Enum):
+class States(str, Enum):
     """Button entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
     AVAILABLE = "AVAILABLE"
 
 
-class ATTRIBUTES(str, Enum):
+class Attributes(str, Enum):
     """Button entity attributes."""
 
     STATE = "state"
 
 
-class COMMANDS(str, Enum):
+class Commands(str, Enum):
     """Button entity commands."""
 
     PUSH = "push"
@@ -42,23 +38,29 @@ class Button(Entity):
     for more information.
     """
 
-    def __init__(self, identifier: str, name: str | dict, area: str | None = None):
+    def __init__(
+        self,
+        identifier: str,
+        name: str | dict[str, str],
+        area: str | None = None,
+        cmd_handler: CommandHandler = None,
+    ):
         """
         Create button-entity instance.
 
         :param identifier: entity identifier
         :param name: friendly name, either a string or a language dictionary
         :param area: optional area name
+        :param cmd_handler: handler for entity commands
         """
         super().__init__(
             identifier,
             name,
-            TYPES.BUTTON,
+            EntityTypes.BUTTON,
             ["press"],
-            {ATTRIBUTES.STATE: STATES.AVAILABLE},
+            {Attributes.STATE: States.AVAILABLE},
             None,
             None,
             area,
+            cmd_handler,
         )
-
-        LOG.debug("Button entity created with id: %s", self.id)
