@@ -11,8 +11,11 @@ following customization:
 Install all code linting tools:
 
 ```shell
-pip3 install -r test-requirements.txt
+pip3 install -r requirements.txt -r test-requirements.txt
 ```
+
+Note: once <https://github.com/pypa/pip/issues/11440> is implemented, the requirements files can be removed and
+`pyproject.toml` is sufficient.
 
 ### Linting
 

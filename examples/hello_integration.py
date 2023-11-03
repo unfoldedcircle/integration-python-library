@@ -26,9 +26,7 @@ async def cmd_handler(entity: ucapi.Button, cmd_id: str, _params: dict[str, Any]
     return ucapi.StatusCodes.OK
 
 
-if __name__ == "__main__":
-    logging.basicConfig()
-
+async def main() -> None:
     button = ucapi.Button(
         "button1",
         "Push the button",
@@ -36,8 +34,14 @@ if __name__ == "__main__":
     )
     api.available_entities.add(button)
 
-    # We are ready all the time! Otherwise, use @api.listens_to(ucapi.Events.CONNECT) & DISCONNECT
-    api.set_device_state(ucapi.DeviceStates.CONNECTED)
+    await api.init("hello_integration.json")
 
-    loop.run_until_complete(api.init("hello_integration.json"))
+    # We are ready all the time! Otherwise, use @api.listens_to(ucapi.Events.CONNECT) & DISCONNECT
+    await api.set_device_state(ucapi.DeviceStates.CONNECTED)
+
+
+if __name__ == "__main__":
+    logging.basicConfig()
+
+    loop.run_until_complete(main())
     loop.run_forever()

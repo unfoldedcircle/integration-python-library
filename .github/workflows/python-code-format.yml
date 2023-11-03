@@ -8,9 +8,8 @@ on:
       - 'test-requirements.txt'
       - 'tests/**'
       - '.github/**/*.yml'
-      - '.pylintrc'
       - 'pyproject.toml'
-      - 'tox.ini'
+      - '*.cfg'
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]

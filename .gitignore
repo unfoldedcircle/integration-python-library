@@ -100,3 +100,4 @@ ENV/
 .vscode/
 
 .DS_Store
+/ucapi/_version.py
