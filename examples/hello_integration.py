@@ -26,7 +26,15 @@ async def cmd_handler(entity: ucapi.Button, cmd_id: str, _params: dict[str, Any]
     return ucapi.StatusCodes.OK
 
 
-async def main() -> None:
+@api.listens_to(ucapi.Events.CONNECT)
+async def on_connect() -> None:
+    """When the remote connects, we just set the device state. We are ready all the time!"""
+    await api.set_device_state(ucapi.DeviceStates.CONNECTED)
+
+
+if __name__ == "__main__":
+    logging.basicConfig()
+
     button = ucapi.Button(
         "button1",
         "Push the button",
@@ -34,14 +42,5 @@ async def main() -> None:
     )
     api.available_entities.add(button)
 
-    await api.init("hello_integration.json")
-
-    # We are ready all the time! Otherwise, use @api.listens_to(ucapi.Events.CONNECT) & DISCONNECT
-    await api.set_device_state(ucapi.DeviceStates.CONNECTED)
-
-
-if __name__ == "__main__":
-    logging.basicConfig()
-
-    loop.run_until_complete(main())
+    loop.run_until_complete(api.init("hello_integration.json"))
     loop.run_forever()
