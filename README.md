@@ -28,24 +28,9 @@ Use pip:
 ```shell
 pip3 install ucapi
 ```
-## Usage
 
-Install build tools:
-```shell
-pip3 install build setuptools setuptools_scm
-```
-
-Build:
-```shell
-python -m build
-```
-
-Local installation:
-```shell
-pip3 install --force-reinstall dist/ucapi-$VERSION-py3-none-any.whl
-```
-
-See [examples directory](examples) for a minimal integration driver example. More examples will be published.
+See [examples directory](https://github.com/aitatoi/integration-python-library/blob/main/examples) for a minimal
+integration driver example. More examples will be published.
 
 ### Environment Variables
 
@@ -66,14 +51,15 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Changelog
 
-The major changes found in each new release are listed in the [changelog](CHANGELOG.md) and
-under the GitHub [releases](https://github.com/unfoldedcircle/integration-python-library/releases).
+The major changes found in each new release are listed in the [changelog](https://github.com/aitatoi/integration-python-library/blob/main/CHANGELOG.md)
+and under the GitHub [releases](https://github.com/unfoldedcircle/integration-python-library/releases).
 
 ## Contributions
 
-Please read our [contribution guidelines](./CONTRIBUTING.md) before opening a pull request.
+Please read our [contribution guidelines](https://github.com/aitatoi/integration-python-library/blob/main/CONTRIBUTING.md)
+before opening a pull request.
 
 ## License
 
 This project is licensed under the [**Mozilla Public License 2.0**](https://choosealicense.com/licenses/mpl-2.0/).
-See the [LICENSE](LICENSE) file for details.
+See the [LICENSE](https://github.com/aitatoi/integration-python-library/blob/main/LICENSE) file for details.

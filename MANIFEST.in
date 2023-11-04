@@ -1,0 +1,4 @@
+exclude .*
+exclude MANIFEST.in
+recursive-exclude .idea *
+recursive-exclude .github *
