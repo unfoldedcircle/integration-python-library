@@ -16,7 +16,8 @@ async def driver_setup_handler(msg: ucapi.SetupDriver) -> ucapi.SetupAction:
 
     Either start the setup process or handle the provided user input data.
 
-    :param msg: the setup driver request object, either DriverSetupRequest or UserDataResponse
+    :param msg: the setup driver request object, either DriverSetupRequest,
+                UserDataResponse or UserConfirmationResponse
     :return: the setup action on how to continue
     """
     if isinstance(msg, ucapi.DriverSetupRequest):
@@ -31,16 +32,19 @@ async def driver_setup_handler(msg: ucapi.SetupDriver) -> ucapi.SetupAction:
     return ucapi.SetupError()
 
 
-async def handle_driver_setup(msg: ucapi.DriverSetupRequest) -> ucapi.RequestUserInput | ucapi.SetupError:
+async def handle_driver_setup(
+    msg: ucapi.DriverSetupRequest,
+) -> ucapi.SetupAction:
     """
     Start driver setup.
 
     Initiated by Remote Two to set up the driver.
 
-    :param msg: not used, value(s) of input fields in the first setup screen. See setup_data_schema in driver metadata.
+    :param msg: value(s) of input fields in the first setup screen.
     :return: the setup action on how to continue
     """
-    # for our demo we clear everything, a real driver might have to handle this differently
+    # For our demo we simply clear everything!
+    # A real driver might have to handle this differently
     api.available_entities.clear()
     api.configured_entities.clear()
 
@@ -141,7 +145,9 @@ async def handle_user_data_response(msg: ucapi.UserDataResponse) -> ucapi.SetupA
     return ucapi.SetupError()
 
 
-async def cmd_handler(entity: ucapi.Button, cmd_id: str, _params: dict[str, Any] | None) -> ucapi.StatusCodes:
+async def cmd_handler(
+    entity: ucapi.Button, cmd_id: str, _params: dict[str, Any] | None
+) -> ucapi.StatusCodes:
     """
     Push button command handler.
 
@@ -159,7 +165,7 @@ async def cmd_handler(entity: ucapi.Button, cmd_id: str, _params: dict[str, Any]
 
 @api.listens_to(ucapi.Events.CONNECT)
 async def on_connect() -> None:
-    """When the remote connects, we just set the device state. We are ready all the time!"""
+    # When the remote connects, we just set the device state. We are ready all the time!
     await api.set_device_state(ucapi.DeviceStates.CONNECTED)
 
 

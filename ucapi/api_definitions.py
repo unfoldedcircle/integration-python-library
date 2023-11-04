@@ -108,13 +108,15 @@ class DriverSetupRequest(SetupDriver):
     """
     Start driver setup.
 
-    If a driver includes a ``setup_data_schema`` object in its driver metadata, it enables the dynamic driver setup
-    process. The setup process can be a simple "start-confirm-done" between the Remote Two and the integration
-    driver, or a fully dynamic, multistep process with user interactions, where the user has to provide additional
-    data or select different options.
+    If a driver includes a ``setup_data_schema`` object in its driver metadata, it
+    enables the dynamic driver setup process. The setup process can be a simple
+    "start-confirm-done" between the Remote Two and the integration driver, or a fully
+    dynamic, multistep process with user interactions, where the user has to provide
+    additional data or select different options.
 
-    If the initial setup page contains input fields and not just text, the input values are returned in the
-    ``setup_data`` dictionary. The key is the input field identifier, value contains the input value.
+    If the initial setup page contains input fields and not just text, the input values
+    are returned in the ``setup_data`` dictionary. The key is the input field
+    identifier, value contains the input value.
     """
 
     setup_data: dict[str, str]
@@ -123,10 +125,10 @@ class DriverSetupRequest(SetupDriver):
 @dataclass
 class UserDataResponse(SetupDriver):
     """
-    Provide requested driver setup data to the integration driver during a setup process.
+    Provide requested driver setup data to the integration driver in a setup process.
 
-    The ``input_values`` dictionary contains the user input data. The key is the input field identifier,
-    value contains the input value.
+    The ``input_values`` dictionary contains the user input data. The key is the input
+    field identifier, value contains the input value.
     """
 
     input_values: dict[str, str]
@@ -134,7 +136,13 @@ class UserDataResponse(SetupDriver):
 
 @dataclass
 class UserConfirmationResponse(SetupDriver):
-    """Provide user confirmation response to the integration driver during a setup process."""
+    """
+    Provide user confirmation response to the integration driver in a setup process.
+
+    The ``confirm`` field is set to ``true`` if the user had to perform an action like
+    pressing a button on a device and then confirms the action with continuing the
+    setup process.
+    """
 
     confirm: bool
 
@@ -172,7 +180,9 @@ class SetupComplete(SetupAction):
     """Setup action to complete a successful setup process."""
 
 
-CommandHandler: TypeAlias = Callable[[Any, str, dict[str, Any] | None], Awaitable[StatusCodes]]
+CommandHandler: TypeAlias = Callable[
+    [Any, str, dict[str, Any] | None], Awaitable[StatusCodes]
+]
 
 
 SetupHandler: TypeAlias = Callable[[SetupDriver], Awaitable[SetupAction]]

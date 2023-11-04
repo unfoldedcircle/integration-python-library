@@ -1,4 +1,7 @@
 # Python API wrapper for the UC Integration API
+[![PyPi](https://img.shields.io/pypi/v/ucapi.svg)](https://pypi.org/project/ucapi)
+[![License](https://img.shields.io/github/license/unfoldedcircle/ucapi.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 This library simplifies writing Python based integrations for the [Unfolded Circle Remote Two](https://www.unfoldedcircle.com/)
 by wrapping the [WebSocket Integration API](https://github.com/unfoldedcircle/core-api/tree/main/integration-api).
@@ -19,6 +22,12 @@ Not yet supported:
 Requirements:
 - Python 3.10 or newer
 
+## Installation
+
+Use pip:
+```shell
+pip3 install ucapi
+```
 ## Usage
 
 Install build tools:

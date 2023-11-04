@@ -63,7 +63,7 @@ profile = "black"
 overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
 
 [tool.pylint.format]
-max-line-length = "120"
+max-line-length = "88"
 
 [tool.pylint.MASTER]
 ignore-paths = [
@@ -73,16 +73,20 @@ ignore-paths = [
 
 [tool.pylint."messages control"]
 # Reasons disabled:
+# duplicate-code - unavoidable
 # global-statement - not yet considered
 # too-many-* - are not enforced for the sake of readability
 # too-few-* - same as too-many-*
+# line-too-long - handled with black & flake8
 # fixme - refactoring in progress
 
 disable = [
+    "duplicate-code",
     "global-statement",
     "too-many-arguments",
     "too-many-instance-attributes",
     "too-few-public-methods",
+    "line-too-long",
     "fixme"
 ]
 

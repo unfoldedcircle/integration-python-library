@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Integration driver API for Remote Two.
 
@@ -17,10 +16,10 @@ from typing import Any, Callable
 import websockets
 from pyee.asyncio import AsyncIOEventEmitter
 
-# workaround for pylint error: E0611: No name 'ConnectionClosedOK' in module 'websockets' (no-name-in-module)
+# workaround for pylint error: E0611: No name 'ConnectionClosedOK' in module 'websockets' (no-name-in-module)  # noqa
 from websockets.exceptions import ConnectionClosedOK
 
-# workaround for pylint error: E1101: Module 'websockets' has no 'serve' member (no-member)
+# workaround for pylint error: E1101: Module 'websockets' has no 'serve' member (no-member)  # noqa
 from websockets.server import serve
 from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
@@ -50,7 +49,9 @@ class IntegrationAPI:
         self._server_task = None
         self._clients = set()
 
-        self._config_dir_path: str = os.getenv("UC_CONFIG_HOME") or os.getenv("HOME") or "./"
+        self._config_dir_path: str = (
+            os.getenv("UC_CONFIG_HOME") or os.getenv("HOME") or "./"
+        )
 
         self._available_entities = Entities("available", self._loop)
         self._configured_entities = Entities("configured", self._loop)
@@ -58,17 +59,22 @@ class IntegrationAPI:
         # Setup event loop
         asyncio.set_event_loop(self._loop)
 
-    async def init(self, driver_path: str, setup_handler: uc.SetupHandler | None = None):
+    async def init(
+        self, driver_path: str, setup_handler: uc.SetupHandler | None = None
+    ):
         """
         Load driver configuration and start integration-API WebSocket server.
 
         :param driver_path: path to configuration file
-        :param setup_handler: optional driver setup handler if the driver metadata contains a setup_data_schema object
+        :param setup_handler: optional driver setup handler if the driver metadata
+               contains a setup_data_schema object
         """
         self._driver_path = driver_path
         self._setup_handler = setup_handler
 
-        self._configured_entities.add_listener(uc.Events.ENTITY_ATTRIBUTES_UPDATED, self._on_entity_attributes_updated)
+        self._configured_entities.add_listener(
+            uc.Events.ENTITY_ATTRIBUTES_UPDATED, self._on_entity_attributes_updated
+        )
 
         # Load driver config
         with open(self._driver_path, "r", encoding="utf-8") as file:
@@ -77,18 +83,24 @@ class IntegrationAPI:
         # publishing interface, defaults to "0.0.0.0" if not set
         interface = os.getenv("UC_INTEGRATION_INTERFACE")
         port = int(
-            os.getenv("UC_INTEGRATION_HTTP_PORT") or self._driver_info["port"] if "port" in self._driver_info else 9090
+            os.getenv("UC_INTEGRATION_HTTP_PORT") or self._driver_info["port"]
+            if "port" in self._driver_info
+            else 9090
         )
 
         _adjust_driver_url(self._driver_info, port)
 
-        disable_mdns_publish = os.getenv("UC_DISABLE_MDNS_PUBLISH", "false").lower() in ("true", "1")
+        disable_mdns_publish = os.getenv(
+            "UC_DISABLE_MDNS_PUBLISH", "false"
+        ).lower() in ("true", "1")
 
         if disable_mdns_publish is False:
             # Setup zeroconf service info
             name = f"{self._driver_info['driver_id']}._uc-integration._tcp.local."
             hostname = local_hostname()
-            driver_name = _get_default_language_string(self._driver_info["name"], "Unknown driver")
+            driver_name = _get_default_language_string(
+                self._driver_info["name"], "Unknown driver"
+            )
 
             _LOG.debug("Publishing driver: name=%s, host=%s:%d", name, hostname, port)
 
@@ -108,7 +120,9 @@ class IntegrationAPI:
             await zeroconf.async_register_service(info)
 
         host = interface if interface is not None else "0.0.0.0"
-        self._server_task = self._loop.create_task(self._start_web_socket_server(host, port))
+        self._server_task = self._loop.create_task(
+            self._start_web_socket_server(host, port)
+        )
 
         _LOG.info(
             "Driver is up: %s, version: %s, listening on: %s:%d",
@@ -125,7 +139,9 @@ class IntegrationAPI:
             "attributes": attributes,
         }
 
-        await self._broadcast_ws_event(uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY)
+        await self._broadcast_ws_event(
+            uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY
+        )
 
     async def _start_web_socket_server(self, host: str, port: int) -> None:
         async with serve(self._handle_ws, host, port):
@@ -157,7 +173,9 @@ class IntegrationAPI:
             _LOG.info("WS: Client removed")
             self._events.emit(uc.Events.DISCONNECT)
 
-    async def _send_ok_result(self, websocket, req_id: int, msg_data: dict[str, Any] | list | None = None) -> None:
+    async def _send_ok_result(
+        self, websocket, req_id: int, msg_data: dict[str, Any] | list | None = None
+    ) -> None:
         """
         Send a WebSocket success message with status code OK.
 
@@ -168,7 +186,9 @@ class IntegrationAPI:
         Raises:
             websockets.ConnectionClosed: When the connection is closed.
         """
-        await self._send_ws_response(websocket, req_id, "result", msg_data, uc.StatusCodes.OK)
+        await self._send_ws_response(
+            websocket, req_id, "result", msg_data, uc.StatusCodes.OK
+        )
 
     async def _send_error_result(
         self,
@@ -225,11 +245,14 @@ class IntegrationAPI:
         else:
             _LOG.error("Error sending response: connection no longer established")
 
-    async def _broadcast_ws_event(self, msg: str, msg_data: dict[str, Any], category: uc.EventCategory) -> None:
+    async def _broadcast_ws_event(
+        self, msg: str, msg_data: dict[str, Any], category: uc.EventCategory
+    ) -> None:
         """
         Send the given event-message to all connected WebSocket clients.
 
-        If a client is no longer connected, a log message is printed and the remaining clients are notified.
+        If a client is no longer connected, a log message is printed and the remaining
+        clients are notified.
 
         :param msg: event message name
         :param msg_data: message data payload
@@ -245,7 +268,9 @@ class IntegrationAPI:
             except websockets.exceptions.WebSocketException:
                 pass
 
-    async def _send_ws_event(self, websocket, msg: str, msg_data: dict[str, Any], category: uc.EventCategory) -> None:
+    async def _send_ws_event(
+        self, websocket, msg: str, msg_data: dict[str, Any], category: uc.EventCategory
+    ) -> None:
         """
         Send an event-message to the given WebSocket client.
 
@@ -277,17 +302,31 @@ class IntegrationAPI:
 
         if kind == "req":
             if req_id is None:
-                _LOG.warning("Ignoring request message with missing 'req_id': %s", message)
+                _LOG.warning(
+                    "Ignoring request message with missing 'req_id': %s", message
+                )
             else:
                 await self._handle_ws_request_msg(websocket, msg, req_id, msg_data)
         elif kind == "event":
             self._handle_ws_event_msg(msg, msg_data)
 
-    async def _handle_ws_request_msg(self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None) -> None:
+    async def _handle_ws_request_msg(
+        self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None
+    ) -> None:
         if msg == uc.WsMessages.GET_DRIVER_VERSION:
-            await self._send_ws_response(websocket, req_id, uc.WsMsgEvents.DRIVER_VERSION, self.get_driver_version())
+            await self._send_ws_response(
+                websocket,
+                req_id,
+                uc.WsMsgEvents.DRIVER_VERSION,
+                self.get_driver_version(),
+            )
         elif msg == uc.WsMessages.GET_DEVICE_STATE:
-            await self._send_ws_response(websocket, req_id, uc.WsMsgEvents.DEVICE_STATE, {"state": self.device_state})
+            await self._send_ws_response(
+                websocket,
+                req_id,
+                uc.WsMsgEvents.DEVICE_STATE,
+                {"state": self.device_state},
+            )
         elif msg == uc.WsMessages.GET_AVAILABLE_ENTITIES:
             available_entities = self._available_entities.get_all()
             await self._send_ws_response(
@@ -313,7 +352,9 @@ class IntegrationAPI:
             await self._unsubscribe_events(msg_data)
             await self._send_ok_result(websocket, req_id)
         elif msg == uc.WsMessages.GET_DRIVER_METADATA:
-            await self._send_ws_response(websocket, req_id, uc.WsMsgEvents.DRIVER_METADATA, self._driver_info)
+            await self._send_ws_response(
+                websocket, req_id, uc.WsMsgEvents.DRIVER_METADATA, self._driver_info
+            )
         elif msg == uc.WsMessages.SETUP_DRIVER:
             if not await self._setup_driver(websocket, req_id, msg_data):
                 await self.driver_setup_error(websocket)
@@ -358,7 +399,9 @@ class IntegrationAPI:
             self._state = state
 
             await self._broadcast_ws_event(
-                uc.WsMsgEvents.DEVICE_STATE, {"state": self.device_state}, uc.EventCategory.DEVICE
+                uc.WsMsgEvents.DEVICE_STATE,
+                {"state": self.device_state},
+                uc.EventCategory.DEVICE,
             )
 
     async def _subscribe_events(self, msg_data: dict[str, Any] | None) -> None:
@@ -392,49 +435,74 @@ class IntegrationAPI:
 
         return res
 
-    async def _entity_command(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> None:
+    async def _entity_command(
+        self, websocket, req_id: int, msg_data: dict[str, Any] | None
+    ) -> None:
         if not msg_data:
             _LOG.warning("Ignoring _entity_command: called with empty msg_data")
-            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.BAD_REQUEST)
+            await self.acknowledge_command(
+                websocket, req_id, uc.StatusCodes.BAD_REQUEST
+            )
             return
 
         entity_id = msg_data["entity_id"] if "entity_id" in msg_data else None
         cmd_id = msg_data["cmd_id"] if "cmd_id" in msg_data else None
         if entity_id is None or cmd_id is None:
             _LOG.warning("Ignoring command: missing entity_id or cmd_id")
-            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.BAD_REQUEST)
+            await self.acknowledge_command(
+                websocket, req_id, uc.StatusCodes.BAD_REQUEST
+            )
             return
 
         entity = self.configured_entities.get(entity_id)
         if entity is None:
-            _LOG.warning("Cannot execute command '%s' for '%s': no configured entity found", cmd_id, entity_id)
+            _LOG.warning(
+                "Cannot execute command '%s' for '%s': no configured entity found",
+                cmd_id,
+                entity_id,
+            )
             await self.acknowledge_command(websocket, req_id, uc.StatusCodes.NOT_FOUND)
             return
 
-        result = await entity.command(cmd_id, msg_data["params"] if "params" in msg_data else None)
+        result = await entity.command(
+            cmd_id, msg_data["params"] if "params" in msg_data else None
+        )
         await self.acknowledge_command(websocket, req_id, result)
 
-    async def _setup_driver(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> bool:
+    async def _setup_driver(
+        self, websocket, req_id: int, msg_data: dict[str, Any] | None
+    ) -> bool:
         if msg_data is None or "setup_data" not in msg_data:
             _LOG.warning("Aborting setup_driver: called with empty msg_data")
-            # TODO test if both messages are required, or if we first have to ack with OK, then abort the setup
-            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.BAD_REQUEST)
+            # TODO test if both messages are required,
+            #      or if we first have to ack with OK, then abort the setup
+            await self.acknowledge_command(
+                websocket, req_id, uc.StatusCodes.BAD_REQUEST
+            )
             return False
 
         # make sure integration driver installed a setup handler
         if not self._setup_handler:
-            _LOG.error("Received setup_driver request, but no setup handler provided by the driver!")
-            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.SERVICE_UNAVAILABLE)
+            _LOG.error(
+                "Received setup_driver request, but no setup handler provided by the driver!"  # noqa
+            )
+            await self.acknowledge_command(
+                websocket, req_id, uc.StatusCodes.SERVICE_UNAVAILABLE
+            )
             return False
 
         await self.acknowledge_command(websocket, req_id)
 
         try:
-            action = await self._setup_handler(uc.DriverSetupRequest(msg_data["setup_data"]))
+            action = await self._setup_handler(
+                uc.DriverSetupRequest(msg_data["setup_data"])
+            )
 
             if isinstance(action, uc.RequestUserInput):
                 await self.driver_setup_progress(websocket)
-                await self.request_driver_setup_user_input(websocket, action.title, action.settings)
+                await self.request_driver_setup_user_input(
+                    websocket, action.title, action.settings
+                )
                 return True
             if isinstance(action, uc.RequestUserConfirmation):
                 await self.driver_setup_progress(websocket)
@@ -447,34 +515,50 @@ class IntegrationAPI:
                 return True
 
             # error action is left, handled below
-        except Exception as ex:  # pylint: disable=W0718  # TODO define custom exceptions?
+        # TODO define custom exceptions?
+        except Exception as ex:  # pylint: disable=W0718
             _LOG.error("Exception in setup handler, aborting setup! Exception: %s", ex)
 
         return False
 
-    async def _set_driver_user_data(self, websocket, req_id: int, msg_data: dict[str, Any] | None) -> bool:
+    async def _set_driver_user_data(
+        self, websocket, req_id: int, msg_data: dict[str, Any] | None
+    ) -> bool:
         if not self._setup_handler:
-            # TODO test if both messages are required, or if we first have to ack with OK, then abort the setup
-            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.SERVICE_UNAVAILABLE)
+            # TODO test if both messages are required,
+            #      or if we first have to ack with OK, then abort the setup
+            await self.acknowledge_command(
+                websocket, req_id, uc.StatusCodes.SERVICE_UNAVAILABLE
+            )
             return False
 
         if "input_values" in msg_data or "confirm" in msg_data:
             await self.acknowledge_command(websocket, req_id)
             await self.driver_setup_progress(websocket)
         else:
-            _LOG.warning("Unsupported set_driver_user_data payload received: %s", msg_data)
-            await self.acknowledge_command(websocket, req_id, uc.StatusCodes.BAD_REQUEST)
+            _LOG.warning(
+                "Unsupported set_driver_user_data payload received: %s", msg_data
+            )
+            await self.acknowledge_command(
+                websocket, req_id, uc.StatusCodes.BAD_REQUEST
+            )
             return False
 
         try:
             action = uc.SetupError()
             if "input_values" in msg_data:
-                action = await self._setup_handler(uc.UserDataResponse(msg_data["input_values"]))
+                action = await self._setup_handler(
+                    uc.UserDataResponse(msg_data["input_values"])
+                )
             elif "confirm" in msg_data:
-                action = await self._setup_handler(uc.UserConfirmationResponse(msg_data["confirm"]))
+                action = await self._setup_handler(
+                    uc.UserConfirmationResponse(msg_data["confirm"])
+                )
 
             if isinstance(action, uc.RequestUserInput):
-                await self.request_driver_setup_user_input(websocket, action.title, action.settings)
+                await self.request_driver_setup_user_input(
+                    websocket, action.title, action.settings
+                )
                 return True
             if isinstance(action, uc.RequestUserConfirmation):
                 await self.request_driver_setup_user_confirmation(
@@ -486,7 +570,9 @@ class IntegrationAPI:
                 return True
 
             # error action is left, handled below
-        except Exception as ex:  # pylint: disable=W0718  # TODO define custom exceptions?
+        except (
+            Exception  # pylint: disable=W0718  # TODO define custom exceptions?
+        ) as ex:
             _LOG.error("Exception in setup handler, aborting setup! Exception: %s", ex)
 
         return False
@@ -517,7 +603,9 @@ class IntegrationAPI:
         """
         data = {"event_type": "SETUP", "state": "SETUP"}
 
-        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(
+            websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE
+        )
 
     async def request_driver_setup_user_confirmation(
         self,
@@ -552,7 +640,9 @@ class IntegrationAPI:
             },
         }
 
-        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(
+            websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE
+        )
 
     async def request_driver_setup_user_input(
         self, websocket, title: str | dict[str, str], settings: dict[str, Any] | list
@@ -561,22 +651,30 @@ class IntegrationAPI:
         data = {
             "event_type": "SETUP",
             "state": "WAIT_USER_ACTION",
-            "require_user_action": {"input": {"title": _to_language_object(title), "settings": settings}},
+            "require_user_action": {
+                "input": {"title": _to_language_object(title), "settings": settings}
+            },
         }
 
-        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(
+            websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE
+        )
 
     async def driver_setup_complete(self, websocket) -> None:
         """Send a driver setup complete event to Remote Two."""
         data = {"event_type": "STOP", "state": "OK"}
 
-        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(
+            websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE
+        )
 
     async def driver_setup_error(self, websocket, error="OTHER") -> None:
         """Send a driver setup error event to Remote Two."""
         data = {"event_type": "STOP", "state": "ERROR", "error": error}
 
-        await self._send_ws_event(websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE)
+        await self._send_ws_event(
+            websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE
+        )
 
     def add_listener(self, event: uc.Events, f: Callable) -> None:
         """
@@ -587,8 +685,13 @@ class IntegrationAPI:
         """
         self._events.add_listener(event, f)
 
-    def listens_to(self, event: str) -> Callable[[Callable], Callable]:
-        """Return a decorator which will register the decorated function to the specified event."""
+    def listens_to(self, event: uc.Events) -> Callable[[Callable], Callable]:
+        """
+        Register the given event.
+
+        :return: a decorator which will register the decorated function to the specified
+                 event.
+        """
 
         def on(f: Callable) -> Callable:
             self._events.add_listener(event, f)
@@ -653,7 +756,9 @@ def _to_language_object(text: str | dict[str, str] | None) -> dict[str, str] | N
     return text
 
 
-def _get_default_language_string(text: str | dict[str, str] | None, default_text="Undefined") -> str:
+def _get_default_language_string(
+    text: str | dict[str, str] | None, default_text="Undefined"
+) -> str:
     if text is None:
         return default_text
 
@@ -709,7 +814,11 @@ def local_hostname() -> str:
     :return: the local hostname
     """
     # Override option for announced hostname.
-    # Useful on macOS where it's broken for several years: local hostname keeps on changing!
+    # Useful on macOS where it's broken for several years:
+    # local hostname keeps on changing with a increasing number suffix!
     # https://apple.stackexchange.com/questions/189350/my-macs-hostname-keeps-adding-a-2-to-the-end
 
-    return os.getenv("UC_MDNS_LOCAL_HOSTNAME") or f"{socket.gethostname().split('.', 1)[0]}.local."
+    return (
+        os.getenv("UC_MDNS_LOCAL_HOSTNAME")
+        or f"{socket.gethostname().split('.', 1)[0]}.local."
+    )

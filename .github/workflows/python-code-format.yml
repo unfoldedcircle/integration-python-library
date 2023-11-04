@@ -46,4 +46,4 @@ jobs:
           python -m isort ucapi/. --check --verbose
       - name: Check code formatting with black
         run: |
-          python -m black ucapi --check --verbose --line-length 120
+          python -m black ucapi --check --verbose
