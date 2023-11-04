@@ -1,35 +1,23 @@
-name: Check Python code formatting
+name: Publish ucapi on PyPI
 
 on:
-  push:
-    paths:
-      - 'ucapi/**'
-      - 'requirements.txt'
-      - 'test-requirements.txt'
-      - 'tests/**'
-      - '.github/**/*.yml'
-      - 'pyproject.toml'
-      - '*.cfg'
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened]
+  release:
+    types: [released]
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  verify:
     runs-on: ubuntu-22.04
 
-    name: Check Python code formatting
+    name: Verify Python build context
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -47,3 +35,25 @@ jobs:
       - name: Check code formatting with black
         run: |
           python -m black ucapi examples --check --verbose
+
+  build:
+    name: Build and publish PyPi package
+    needs: verify
+    runs-on: ubuntu-22.04
+    if: github.repository_owner == 'unfoldedcircle'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build setuptools setuptools_scm
+      - name: Build package
+        run: python -m build
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
