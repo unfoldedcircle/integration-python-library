@@ -3,7 +3,7 @@
 This library simplifies writing Python based integrations for the [Unfolded Circle Remote Two](https://www.unfoldedcircle.com/)
 by wrapping the [WebSocket Integration API](https://github.com/unfoldedcircle/core-api/tree/main/integration-api).
 
-It's a pre-alpha release (in our eyes). Missing features will be added continuously.
+It's an alpha release (in our eyes). Breaking changes are to be expected and missing features will be continuously added.
 Based on our [Node.js integration library](https://github.com/unfoldedcircle/integration-node-library).
 
 ❗️**Attention:**
@@ -21,9 +21,22 @@ Requirements:
 
 ## Usage
 
-See [examples directory](examples) for a minimal integration driver example.
+Install build tools:
+```shell
+pip3 install build setuptools setuptools_scm
+```
 
-More examples will be published.
+Build:
+```shell
+python -m build
+```
+
+Local installation:
+```shell
+pip3 install --force-reinstall dist/ucapi-$VERSION-py3-none-any.whl
+```
+
+See [examples directory](examples) for a minimal integration driver example. More examples will be published.
 
 ### Environment Variables
 

@@ -1,18 +1,16 @@
-# TODO migrate from setup.py: this is work in progress
 [build-system]
-requires = ["setuptools>=61.2"]
+requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ucapi"
-version = "0.1.0"
 authors = [
     {name = "Unfolded Circle ApS", email = "hello@unfoldedcircle.com"}
 ]
 license = {text = "MPL-2.0"}
 description = "Python wrapper for the Unfolded Circle Integration API"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MPL-2.0 License",
     "Operating System :: OS Independent",
@@ -23,15 +21,23 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "asyncio==3.4.3",
-    "pyee==9.0.4",
-    "websockets==11.0.3",
-    "zeroconf==0.119.0",
+    "asyncio>=3.4",
+    "pyee>=9.0",
+    "websockets>=11.0",
+    "zeroconf~=0.119.0",
 ]
+dynamic = ["version"]
 
 [project.readme]
 file = "README.md"
 content-type = "text/markdown; charset=UTF-8"
+
+[project.urls]
+"Homepage"    = "https://www.unfoldedcircle.com/"
+"Source Code" = "https://github.com/unfoldedcircle/integration-python-library"
+"Bug Reports" = "https://github.com/unfoldedcircle/integration-python-library/issues"
+"Discord"     = "http://unfolded.chat/"
+"Forum"       = "http://unfolded.community/"
 
 [project.optional-dependencies]
 testing = [
@@ -43,15 +49,44 @@ testing = [
 ]
 
 [tool.setuptools]
-zip-safe = false
+packages = ["ucapi"]
 platforms = ["any"]
 license-files = ["LICENSE"]
-# TODO is this correct? Set to True in old setup.py
-include-package-data = true
 
-[tool.setuptools.packages.find]
-exclude = ["tests"]
-namespaces = false
+[tool.setuptools_scm]
+write_to = "ucapi/_version.py"
 
 [tool.isort]
 profile = "black"
+
+[tool.pylint.exceptions]
+overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
+
+[tool.pylint.format]
+max-line-length = "120"
+
+[tool.pylint.MASTER]
+ignore-paths = [
+    # ignore generated file
+    "ucapi/_version.py"
+]
+
+[tool.pylint."messages control"]
+# Reasons disabled:
+# global-statement - not yet considered
+# too-many-* - are not enforced for the sake of readability
+# too-few-* - same as too-many-*
+# fixme - refactoring in progress
+
+disable = [
+    "global-statement",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-few-public-methods",
+    "fixme"
+]
+
+[tool.pylint.STRING]
+# This flag controls whether inconsistent-quotes generates a warning when the
+# character used as a quote delimiter is used inconsistently within a module.
+check-quote-consistency = true
