@@ -1,4 +1,3 @@
-# pylint: disable=R0801
 """
 Climate entity definitions.
 
@@ -80,7 +79,7 @@ class Climate(Entity):
 
     See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_climate.md
     for more information.
-    """
+    """  # noqa
 
     def __init__(
         self,
@@ -106,5 +105,13 @@ class Climate(Entity):
         :param cmd_handler: handler for entity commands
         """
         super().__init__(
-            identifier, name, EntityTypes.CLIMATE, features, attributes, device_class, options, area, cmd_handler
+            identifier,
+            name,
+            EntityTypes.CLIMATE,
+            features,
+            attributes,
+            device_class,
+            options,
+            area,
+            cmd_handler,
         )

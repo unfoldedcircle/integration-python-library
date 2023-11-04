@@ -1,4 +1,3 @@
-# pylint: disable=R0801
 """
 Media-player entity definitions.
 
@@ -154,7 +153,7 @@ class MediaPlayer(Entity):
 
     See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_media_player.md
     for more information.
-    """
+    """  # noqa
 
     def __init__(
         self,
@@ -180,5 +179,13 @@ class MediaPlayer(Entity):
         :param cmd_handler: handler for entity commands
         """
         super().__init__(
-            identifier, name, EntityTypes.MEDIA_PLAYER, features, attributes, device_class, options, area, cmd_handler
+            identifier,
+            name,
+            EntityTypes.MEDIA_PLAYER,
+            features,
+            attributes,
+            device_class,
+            options,
+            area,
+            cmd_handler,
         )

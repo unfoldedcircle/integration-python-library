@@ -67,7 +67,11 @@ class Entities:
     def update_attributes(self, entity_id: str, attributes: dict[str, Any]) -> bool:
         """Update entity attributes."""
         if entity_id not in self._storage:
-            _LOG.debug("[%s] cannot update entity attributes '%s': not found", self._id, entity_id)
+            _LOG.debug(
+                "[%s] cannot update entity attributes '%s': not found",
+                self._id,
+                entity_id,
+            )
             return False
 
         for key in attributes:
@@ -107,7 +111,11 @@ class Entities:
         return entities
 
     async def get_states(self) -> list[dict[str, Any]]:
-        """Get all entity information with entity_id, entity_type, device_id, attributes."""
+        """
+        Get all entity state information.
+
+        The returned dict includes: entity_id, entity_type, device_id, attributes.
+        """
         entities = []
 
         for entity in self._storage.values():

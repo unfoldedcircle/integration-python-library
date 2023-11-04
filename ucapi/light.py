@@ -1,4 +1,3 @@
-# pylint: disable=R0801
 """
 Light entity definitions.
 
@@ -66,7 +65,7 @@ class Light(Entity):
 
     See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_light.md
     for more information.
-    """
+    """  # noqa
 
     def __init__(
         self,
@@ -92,5 +91,13 @@ class Light(Entity):
         :param cmd_handler: handler for entity commands
         """
         super().__init__(
-            identifier, name, EntityTypes.LIGHT, features, attributes, device_class, options, area, cmd_handler
+            identifier,
+            name,
+            EntityTypes.LIGHT,
+            features,
+            attributes,
+            device_class,
+            options,
+            area,
+            cmd_handler,
         )

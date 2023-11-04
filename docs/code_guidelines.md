@@ -20,7 +20,7 @@ Note: once <https://github.com/pypa/pip/issues/11440> is implemented, the requir
 ### Linting
 
 ```shell
-python -m pylint ucapi
+python3 -m pylint ucapi
 ```
 
 - The tool is configured in `.pylintrc`.
@@ -34,7 +34,7 @@ Linting integration in PyCharm/IntelliJ IDEA:
 Import statements must be sorted with [isort](https://pycqa.github.io/isort/):
 
 ```shell
-python -m isort ucapi/.
+python3 -m isort ucapi/.
 ```
 
 - The tool is configured in `pyproject.toml` to use the `black` code-formatting profile.
@@ -44,7 +44,7 @@ python -m isort ucapi/.
 Source code is formatted with the [Black code formatting tool](https://github.com/psf/black):
 
 ```shell
-python -m black ucapi --line-length 120
+python3 -m black ucapi --line-length 120
 ```
 
 PyCharm/IntelliJ IDEA integration:
@@ -52,15 +52,14 @@ PyCharm/IntelliJ IDEA integration:
 2. Configure:
 - Python interpreter
 - Use Black formatter: `On code reformat` & optionally `On save`
-- Arguments: `--line-length 120`
 
 ## Verify
 
 The following tests are run as GitHub action for each push on the main branch and for pull requests.
 They can also be run anytime on a local developer machine:
 ```shell
-python -m pylint ucapi
-python -m flake8 ucapi --count --show-source --statistics
-python -m isort ucapi/. --check --verbose 
-python -m black ucapi --check --verbose --line-length 120
+python3 -m pylint ucapi
+python3 -m flake8 ucapi --count --show-source --statistics
+python3 -m isort ucapi/. --check --verbose 
+python3 -m black ucapi --check --verbose
 ```

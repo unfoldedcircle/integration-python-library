@@ -10,7 +10,9 @@ loop = asyncio.get_event_loop()
 api = ucapi.IntegrationAPI(loop)
 
 
-async def cmd_handler(entity: ucapi.Button, cmd_id: str, _params: dict[str, Any] | None) -> ucapi.StatusCodes:
+async def cmd_handler(
+    entity: ucapi.Button, cmd_id: str, _params: dict[str, Any] | None
+) -> ucapi.StatusCodes:
     """
     Push button command handler.
 
@@ -28,7 +30,7 @@ async def cmd_handler(entity: ucapi.Button, cmd_id: str, _params: dict[str, Any]
 
 @api.listens_to(ucapi.Events.CONNECT)
 async def on_connect() -> None:
-    """When the remote connects, we just set the device state. We are ready all the time!"""
+    # When the remote connects, we just set the device state. We are ready all the time!
     await api.set_device_state(ucapi.DeviceStates.CONNECTED)
 
 

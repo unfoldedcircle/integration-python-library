@@ -1,4 +1,3 @@
-# pylint: disable=R0801
 """
 Sensor entity definitions.
 
@@ -65,7 +64,7 @@ class Sensor(Entity):
 
     See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_sensor.md
     for more information.
-    """
+    """  # noqa
 
     def __init__(
         self,

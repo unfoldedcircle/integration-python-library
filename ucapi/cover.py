@@ -1,4 +1,3 @@
-# pylint: disable=R0801
 """
 Cover entity definitions.
 
@@ -79,7 +78,7 @@ class Cover(Entity):
 
     See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_cover.md
     for more information.
-    """
+    """  # noqa
 
     def __init__(
         self,

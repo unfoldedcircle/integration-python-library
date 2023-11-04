@@ -61,7 +61,7 @@ class Switch(Entity):
 
     See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_switch.md
     for more information.
-    """
+    """  # noqa
 
     def __init__(
         self,
