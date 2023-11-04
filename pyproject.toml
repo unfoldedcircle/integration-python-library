@@ -12,7 +12,7 @@ description = "Python wrapper for the Unfolded Circle Integration API"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MPL-2.0 License",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries",
     "Topic :: Home Automation",
