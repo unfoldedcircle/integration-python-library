@@ -493,6 +493,7 @@ class IntegrationAPI:
 
         await self.acknowledge_command(websocket, req_id)
 
+        result = False
         try:
             action = await self._setup_handler(
                 uc.DriverSetupRequest(msg_data["setup_data"])
@@ -503,23 +504,26 @@ class IntegrationAPI:
                 await self.request_driver_setup_user_input(
                     websocket, action.title, action.settings
                 )
-                return True
+                result = True
             if isinstance(action, uc.RequestUserConfirmation):
                 await self.driver_setup_progress(websocket)
                 await self.request_driver_setup_user_confirmation(
                     websocket, action.title, action.header, action.image, action.footer
                 )
-                return True
+                result = True
             if isinstance(action, uc.SetupComplete):
                 await self.driver_setup_complete(websocket)
-                return True
+                result = True
+            if isinstance(action, uc.SetupError):
+                await self.driver_setup_error(websocket, action.error_type)
+                result = True
 
             # error action is left, handled below
         # TODO define custom exceptions?
         except Exception as ex:  # pylint: disable=W0718
             _LOG.error("Exception in setup handler, aborting setup! Exception: %s", ex)
 
-        return False
+        return result
 
     async def _set_driver_user_data(
         self, websocket, req_id: int, msg_data: dict[str, Any] | None
