@@ -10,6 +10,7 @@ Integration driver library for Remote Two.
 import logging  # isort:skip
 
 from .api_definitions import (  # isort:skip # noqa: F401
+    AbortDriverSetup,
     DeviceStates,
     DriverSetupRequest,
     Events,

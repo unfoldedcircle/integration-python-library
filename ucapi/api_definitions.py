@@ -84,7 +84,6 @@ class Events(str, Enum):
     ENTITY_ATTRIBUTES_UPDATED = "entity_attributes_updated"
     SUBSCRIBE_ENTITIES = "subscribe_entities"
     UNSUBSCRIBE_ENTITIES = "unsubscribe_entities"
-    SETUP_DRIVER_ABORT = "setup_driver_abort"
     CONNECT = "connect"
     DISCONNECT = "disconnect"
     ENTER_STANDBY = "enter_standby"
@@ -145,6 +144,18 @@ class UserConfirmationResponse(SetupDriver):
     """
 
     confirm: bool
+
+
+@dataclass
+class AbortDriverSetup(SetupDriver):
+    """
+    Abort notification.
+
+    - ``error == OTHER``: the user cancelled the setup flow.
+    - ``error == TIMEOUT``: timeout occurred, most likely because of no user input.
+    """
+
+    error: IntegrationSetupError
 
 
 class SetupAction:

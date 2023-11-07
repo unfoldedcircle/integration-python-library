@@ -308,7 +308,7 @@ class IntegrationAPI:
             else:
                 await self._handle_ws_request_msg(websocket, msg, req_id, msg_data)
         elif kind == "event":
-            self._handle_ws_event_msg(msg, msg_data)
+            await self._handle_ws_event_msg(msg, msg_data)
 
     async def _handle_ws_request_msg(
         self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None
@@ -365,7 +365,9 @@ class IntegrationAPI:
                 await asyncio.sleep(0.5)
                 await self.driver_setup_error(websocket)
 
-    def _handle_ws_event_msg(self, msg: str, _msg_data: dict[str, Any] | None) -> None:
+    async def _handle_ws_event_msg(
+        self, msg: str, msg_data: dict[str, Any] | None
+    ) -> None:
         if msg == uc.WsMsgEvents.CONNECT:
             self._events.emit(uc.Events.CONNECT)
         elif msg == uc.WsMsgEvents.DISCONNECT:
@@ -375,7 +377,22 @@ class IntegrationAPI:
         elif msg == uc.WsMsgEvents.EXIT_STANDBY:
             self._events.emit(uc.Events.EXIT_STANDBY)
         elif msg == uc.WsMsgEvents.ABORT_DRIVER_SETUP:
-            self._events.emit(uc.Events.SETUP_DRIVER_ABORT)
+            if not self._setup_handler:
+                _LOG.warning(
+                    "Received abort_driver_setup event, but no setup handler provided by the driver!"  # noqa
+                )
+                return
+
+            if "error" in msg_data:
+                try:
+                    error = uc.IntegrationSetupError[msg_data["error"]]
+                except KeyError:
+                    error = uc.IntegrationSetupError.OTHER
+                await self._setup_handler(uc.AbortDriverSetup(error))
+            else:
+                _LOG.warning(
+                    "Unsupported abort_driver_setup payload received: %s", msg_data
+                )
 
     async def _authenticate(self, websocket, success: bool) -> None:
         await self._send_ws_response(
