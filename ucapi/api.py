@@ -357,9 +357,12 @@ class IntegrationAPI:
             )
         elif msg == uc.WsMessages.SETUP_DRIVER:
             if not await self._setup_driver(websocket, req_id, msg_data):
+                # sleep for web-configurator quirks...
+                await asyncio.sleep(0.5)
                 await self.driver_setup_error(websocket)
         elif msg == uc.WsMessages.SET_DRIVER_USER_DATA:
             if not await self._set_driver_user_data(websocket, req_id, msg_data):
+                await asyncio.sleep(0.5)
                 await self.driver_setup_error(websocket)
 
     def _handle_ws_event_msg(self, msg: str, _msg_data: dict[str, Any] | None) -> None:
@@ -472,13 +475,11 @@ class IntegrationAPI:
     async def _setup_driver(
         self, websocket, req_id: int, msg_data: dict[str, Any] | None
     ) -> bool:
+        await self.acknowledge_command(websocket, req_id)
+
         if msg_data is None or "setup_data" not in msg_data:
             _LOG.warning("Aborting setup_driver: called with empty msg_data")
-            # TODO test if both messages are required,
-            #      or if we first have to ack with OK, then abort the setup
-            await self.acknowledge_command(
-                websocket, req_id, uc.StatusCodes.BAD_REQUEST
-            )
+            # Returning False will show a setup error in the setup flow process
             return False
 
         # make sure integration driver installed a setup handler
@@ -486,12 +487,7 @@ class IntegrationAPI:
             _LOG.error(
                 "Received setup_driver request, but no setup handler provided by the driver!"  # noqa
             )
-            await self.acknowledge_command(
-                websocket, req_id, uc.StatusCodes.SERVICE_UNAVAILABLE
-            )
             return False
-
-        await self.acknowledge_command(websocket, req_id)
 
         result = False
         try:
@@ -505,20 +501,19 @@ class IntegrationAPI:
                     websocket, action.title, action.settings
                 )
                 result = True
-            if isinstance(action, uc.RequestUserConfirmation):
+            elif isinstance(action, uc.RequestUserConfirmation):
                 await self.driver_setup_progress(websocket)
                 await self.request_driver_setup_user_confirmation(
                     websocket, action.title, action.header, action.image, action.footer
                 )
                 result = True
-            if isinstance(action, uc.SetupComplete):
+            elif isinstance(action, uc.SetupComplete):
                 await self.driver_setup_complete(websocket)
                 result = True
-            if isinstance(action, uc.SetupError):
+            elif isinstance(action, uc.SetupError):
                 await self.driver_setup_error(websocket, action.error_type)
                 result = True
 
-            # error action is left, handled below
         # TODO define custom exceptions?
         except Exception as ex:  # pylint: disable=W0718
             _LOG.error("Exception in setup handler, aborting setup! Exception: %s", ex)
@@ -528,26 +523,25 @@ class IntegrationAPI:
     async def _set_driver_user_data(
         self, websocket, req_id: int, msg_data: dict[str, Any] | None
     ) -> bool:
+        await self.acknowledge_command(websocket, req_id)
+
         if not self._setup_handler:
-            # TODO test if both messages are required,
-            #      or if we first have to ack with OK, then abort the setup
-            await self.acknowledge_command(
-                websocket, req_id, uc.StatusCodes.SERVICE_UNAVAILABLE
+            _LOG.error(
+                "Received set_driver_user_data request, but no setup handler provided by the driver!"  # noqa
             )
             return False
 
         if "input_values" in msg_data or "confirm" in msg_data:
-            await self.acknowledge_command(websocket, req_id)
+            # please don't ask, there's some funky stuff in the web-configurator :-(
+            await asyncio.sleep(0.5)
             await self.driver_setup_progress(websocket)
         else:
             _LOG.warning(
                 "Unsupported set_driver_user_data payload received: %s", msg_data
             )
-            await self.acknowledge_command(
-                websocket, req_id, uc.StatusCodes.BAD_REQUEST
-            )
             return False
 
+        result = False
         try:
             action = uc.SetupError()
             if "input_values" in msg_data:
@@ -563,23 +557,24 @@ class IntegrationAPI:
                 await self.request_driver_setup_user_input(
                     websocket, action.title, action.settings
                 )
-                return True
-            if isinstance(action, uc.RequestUserConfirmation):
+                result = True
+            elif isinstance(action, uc.RequestUserConfirmation):
                 await self.request_driver_setup_user_confirmation(
                     websocket, action.title, action.header, action.image, action.footer
                 )
-                return True
-            if isinstance(action, uc.SetupComplete):
+                result = True
+            elif isinstance(action, uc.SetupComplete):
                 await self.driver_setup_complete(websocket)
-                return True
+                result = True
+            elif isinstance(action, uc.SetupError):
+                await self.driver_setup_error(websocket, action.error_type)
+                result = True
 
-            # error action is left, handled below
-        except (
-            Exception  # pylint: disable=W0718  # TODO define custom exceptions?
-        ) as ex:
+        # TODO define custom exceptions?
+        except Exception as ex:  # pylint: disable=W0718
             _LOG.error("Exception in setup handler, aborting setup! Exception: %s", ex)
 
-        return False
+        return result
 
     async def acknowledge_command(
         self, websocket, req_id: int, status_code: uc.StatusCodes = uc.StatusCodes.OK
