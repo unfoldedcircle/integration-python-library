@@ -9,10 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+---
+
+## v0.1.3 - 2023-11-08
 ### Fixed
 - Environment variable `UC_INTEGRATION_HTTP_PORT` to override server port.
 
----
+### Changed
+- Update zeroconf dependency and remove asyncio library.
 
 ## v0.1.2 - 2023-11-07
 ### Fixed
