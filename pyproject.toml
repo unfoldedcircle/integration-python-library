@@ -21,10 +21,9 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "asyncio>=3.4",
     "pyee>=9.0",
     "websockets>=11.0",
-    "zeroconf~=0.119.0",
+    "zeroconf~=0.120.0",
 ]
 dynamic = ["version"]
 
