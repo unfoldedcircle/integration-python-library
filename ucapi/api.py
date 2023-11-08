@@ -82,11 +82,10 @@ class IntegrationAPI:
 
         # publishing interface, defaults to "0.0.0.0" if not set
         interface = os.getenv("UC_INTEGRATION_INTERFACE")
-        port = int(
-            os.getenv("UC_INTEGRATION_HTTP_PORT") or self._driver_info["port"]
-            if "port" in self._driver_info
-            else 9090
-        )
+        if os.getenv("UC_INTEGRATION_HTTP_PORT"):
+            port = int(os.getenv("UC_INTEGRATION_HTTP_PORT"))
+        else:
+            port = self._driver_info["port"] if "port" in self._driver_info else 9090
 
         _adjust_driver_url(self._driver_info, port)
 
