@@ -3,8 +3,11 @@
 This project uses the [PEP 8 – Style Guide for Python Code](https://peps.python.org/pep-0008/) as coding convention, with the
 following customization:
 
-- Code line length: 120
+- Code line length: 88
 - Use double quotes as default (don't mix and match for simple quoting, checked with pylint).
+- Configuration:
+  - `pyproject.toml` for pylint and isort
+  - `setup.cfg` for flake8
 
 ## Tooling
 
@@ -44,7 +47,7 @@ python3 -m isort ucapi/.
 Source code is formatted with the [Black code formatting tool](https://github.com/psf/black):
 
 ```shell
-python3 -m black ucapi --line-length 120
+python3 -m black ucapi
 ```
 
 PyCharm/IntelliJ IDEA integration:
