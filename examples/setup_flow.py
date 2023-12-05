@@ -43,6 +43,10 @@ async def handle_driver_setup(
     :param msg: value(s) of input fields in the first setup screen.
     :return: the setup action on how to continue
     """
+    # No support for reconfiguration :-)
+    if msg.reconfigure:
+        print("Ignoring driver reconfiguration request")
+
     # For our demo we simply clear everything!
     # A real driver might have to handle this differently
     api.available_entities.clear()
@@ -51,6 +55,13 @@ async def handle_driver_setup(
     # check if user selected the expert option in the initial setup screen
     # please note that all values are returned as strings!
     if "expert" not in msg.setup_data or msg.setup_data["expert"] != "true":
+        # add a single button as default action
+        button = ucapi.Button(
+            "button",
+            "Button",
+            cmd_handler=cmd_handler,
+        )
+        api.available_entities.add(button)
         return ucapi.SetupComplete()
 
     # Dropdown selections are usually set dynamically, e.g. with found devices etc.

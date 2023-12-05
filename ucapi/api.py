@@ -508,7 +508,9 @@ class IntegrationAPI:
         result = False
         try:
             action = await self._setup_handler(
-                uc.DriverSetupRequest(msg_data["setup_data"])
+                uc.DriverSetupRequest(
+                    msg_data.get("reconfigure") or False, msg_data["setup_data"]
+                )
             )
 
             if isinstance(action, uc.RequestUserInput):

@@ -118,6 +118,7 @@ class DriverSetupRequest(SetupDriver):
     identifier, value contains the input value.
     """
 
+    reconfigure: bool
     setup_data: dict[str, str]
 
 
