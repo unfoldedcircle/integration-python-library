@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Changed
+- Add `reconfigure` flag in `DriverSetupRequest` message to reconfigure a driver.
+
 ---
 
 ## v0.1.3 - 2023-11-08
