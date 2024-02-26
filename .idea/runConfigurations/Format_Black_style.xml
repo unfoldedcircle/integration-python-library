@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Check Black style" type="PythonConfigurationType" factoryName="Python">
+  <configuration default="false" name="Format Black style" type="PythonConfigurationType" factoryName="Python">
     <module name="integration-python-library" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
@@ -24,7 +24,7 @@
       </ENTRIES>
     </EXTENSION>
     <option name="SCRIPT_NAME" value="black" />
-    <option name="PARAMETERS" value="ucapi --check --verbose" />
+    <option name="PARAMETERS" value="ucapi examples --verbose" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="true" />

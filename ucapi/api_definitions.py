@@ -4,6 +4,7 @@ API definitions.
 :copyright: (c) 2023 by Unfolded Circle ApS.
 :license: MPL-2.0, see LICENSE for more details.
 """
+
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import Any, Awaitable, Callable, TypeAlias
@@ -192,7 +193,9 @@ class SetupComplete(SetupAction):
     """Setup action to complete a successful setup process."""
 
 
-CommandHandler: TypeAlias = Callable[[Any, str, dict[str, Any] | None], Awaitable[StatusCodes]]
+CommandHandler: TypeAlias = Callable[
+    [Any, str, dict[str, Any] | None], Awaitable[StatusCodes]
+]
 
 
 SetupHandler: TypeAlias = Callable[[SetupDriver], Awaitable[SetupAction]]
