@@ -4,6 +4,7 @@ API definitions.
 :copyright: (c) 2023 by Unfolded Circle ApS.
 :license: MPL-2.0, see LICENSE for more details.
 """
+
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import Any, Awaitable, Callable, TypeAlias
