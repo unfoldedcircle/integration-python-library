@@ -193,7 +193,9 @@ class SetupComplete(SetupAction):
     """Setup action to complete a successful setup process."""
 
 
-CommandHandler: TypeAlias = Callable[[Any, str, dict[str, Any] | None], Awaitable[StatusCodes]]
+CommandHandler: TypeAlias = Callable[
+    [Any, str, dict[str, Any] | None], Awaitable[StatusCodes]
+]
 
 
 SetupHandler: TypeAlias = Callable[[SetupDriver], Awaitable[SetupAction]]

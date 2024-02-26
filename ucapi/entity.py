@@ -72,7 +72,9 @@ class Entity:
 
         _LOG.debug("Created %s entity: %s", self.entity_type.value, self.id)
 
-    async def command(self, cmd_id: str, params: dict[str, Any] | None = None) -> StatusCodes:
+    async def command(
+        self, cmd_id: str, params: dict[str, Any] | None = None
+    ) -> StatusCodes:
         """
         Execute entity command with the installed command handler.
 
