@@ -413,15 +413,19 @@ class IntegrationAPI:
         }
 
     async def set_device_state(self, state: uc.DeviceStates) -> None:
-        """Set new device state and notify all connected clients."""
-        if self._state != state:
-            self._state = state
+        """
+        Set new device state and notify all connected clients.
 
-            await self._broadcast_ws_event(
-                uc.WsMsgEvents.DEVICE_STATE,
-                {"state": self.device_state},
-                uc.EventCategory.DEVICE,
-            )
+        Attention: clients are always notified, even if the current state is the same as
+        the new state!
+        """
+        self._state = state
+
+        await self._broadcast_ws_event(
+            uc.WsMsgEvents.DEVICE_STATE,
+            {"state": self.device_state},
+            uc.EventCategory.DEVICE,
+        )
 
     async def _subscribe_events(self, msg_data: dict[str, Any] | None) -> None:
         if msg_data is None:

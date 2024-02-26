@@ -11,6 +11,7 @@ _Changes in the next release_
 
 ### Changed
 - Add `reconfigure` flag in `DriverSetupRequest` message to reconfigure a driver.
+- Always notify clients when setting a new device state, even if the state doesn't change.
 
 ---
 
