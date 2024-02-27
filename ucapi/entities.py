@@ -102,9 +102,13 @@ class Entities:
                 "device_id": entity.device_id,
                 "features": entity.features,
                 "name": entity.name,
-                "area": entity.area,
-                "device_class": entity.device_class,
             }
+            if entity.device_class:
+                res["device_class"] = entity.device_class
+            if entity.options:
+                res["options"] = entity.options
+            if entity.area:
+                res["area"] = entity.area
 
             entities.append(res)
 
