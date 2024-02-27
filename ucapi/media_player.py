@@ -52,12 +52,20 @@ class Features(str, Enum):
     MEDIA_IMAGE_URL = "media_image_url"
     MEDIA_TYPE = "media_type"
     DPAD = "dpad"
+    NUMPAD = "numpad"
     HOME = "home"
     MENU = "menu"
+    GUIDE = "guide"
+    INFO = "info"
     COLOR_BUTTONS = "color_buttons"
     CHANNEL_SWITCHER = "channel_switcher"
     SELECT_SOURCE = "select_source"
     SELECT_SOUND_MODE = "select_sound_mode"
+    EJECT = "eject"
+    OPEN_CLOSE = "open_close"
+    AUDIO_TRACK = "audio_track"
+    SUBTITLE = "subtitle"
+    RECORD = "record"
 
 
 class Attributes(str, Enum):
@@ -109,15 +117,34 @@ class Commands(str, Enum):
     CURSOR_LEFT = "cursor_left"
     CURSOR_RIGHT = "cursor_right"
     CURSOR_ENTER = "cursor_enter"
+    DIGIT_0 = "digit_0"
+    DIGIT_1 = "digit_1"
+    DIGIT_2 = "digit_2"
+    DIGIT_3 = "digit_3"
+    DIGIT_4 = "digit_4"
+    DIGIT_5 = "digit_5"
+    DIGIT_6 = "digit_6"
+    DIGIT_7 = "digit_7"
+    DIGIT_8 = "digit_8"
+    DIGIT_9 = "digit_9"
     FUNCTION_RED = "function_red"
     FUNCTION_GREEN = "function_green"
     FUNCTION_YELLOW = "function_yellow"
     FUNCTION_BLUE = "function_blue"
     HOME = "home"
     MENU = "menu"
+    GUIDE = "guide"
+    INFO = "info"
     BACK = "back"
     SELECT_SOURCE = "select_source"
     SELECT_SOUND_MODE = "select_sound_mode"
+    RECORD = "record"
+    MY_RECORDINGS = "my_recordings"
+    LIVE = "live"
+    EJECT = "eject"
+    OPEN_CLOSE = "open_close"
+    AUDIO_TRACK = "audio_track"
+    SUBTITLE = "subtitle"
     SEARCH = "search"
 
 
@@ -134,6 +161,7 @@ class DeviceClasses(str, Enum):
 class Options(str, Enum):
     """Media-player entity options."""
 
+    SIMPLE_COMMANDS = "simple_commands"
     VOLUME_STEPS = "volume_steps"
 
 
