@@ -9,16 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+---
+
+## v0.1.4 - 2024-02-27
 ### Added
 - Media-player entity features ([core-api/#32](https://github.com/unfoldedcircle/core-api/issues/32)):
-    - new features: numpad, guide, info, eject, open_close, audio_track, subtitle, record.
-    - new option: simple_commands for any additional commands not covered by a feature.
+  - new features: numpad, guide, info, eject, open_close, audio_track, subtitle, record.
+  - new option: simple_commands for any additional commands not covered by a feature.
+
+### Fixed
+- Return entity options in `get_available_entities` response message.
 
 ### Changed
 - Add `reconfigure` flag in `DriverSetupRequest` message to reconfigure a driver.
 - Always notify clients when setting a new device state, even if the state doesn't change.
-
----
 
 ## v0.1.3 - 2023-11-08
 ### Fixed
