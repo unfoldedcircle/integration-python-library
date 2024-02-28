@@ -11,6 +11,10 @@ _Changes in the next release_
 
 ---
 
+## v0.1.5 - 2024-02-28
+### Changed
+- Allow newer zeroconf versions than 0.120.0 (e.g. pyatv 0.14.5 requires 0.131.0).
+
 ## v0.1.4 - 2024-02-27
 ### Added
 - Media-player entity features ([core-api/#32](https://github.com/unfoldedcircle/core-api/issues/32)):

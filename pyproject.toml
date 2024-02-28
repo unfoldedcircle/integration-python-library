@@ -23,7 +23,7 @@ requires-python = ">=3.10"
 dependencies = [
     "pyee>=9.0",
     "websockets>=11.0",
-    "zeroconf~=0.120.0",
+    "zeroconf>=0.120.0",
 ]
 dynamic = ["version"]
 
