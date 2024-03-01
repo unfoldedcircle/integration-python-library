@@ -55,6 +55,7 @@ class Features(str, Enum):
     NUMPAD = "numpad"
     HOME = "home"
     MENU = "menu"
+    CONTEXT_MENU = "context_menu"
     GUIDE = "guide"
     INFO = "info"
     COLOR_BUTTONS = "color_buttons"
@@ -66,6 +67,7 @@ class Features(str, Enum):
     AUDIO_TRACK = "audio_track"
     SUBTITLE = "subtitle"
     RECORD = "record"
+    SETTINGS = "settings"
 
 
 class Attributes(str, Enum):
@@ -133,6 +135,7 @@ class Commands(str, Enum):
     FUNCTION_BLUE = "function_blue"
     HOME = "home"
     MENU = "menu"
+    CONTEXT_MENU = "context_menu"
     GUIDE = "guide"
     INFO = "info"
     BACK = "back"
@@ -145,6 +148,7 @@ class Commands(str, Enum):
     OPEN_CLOSE = "open_close"
     AUDIO_TRACK = "audio_track"
     SUBTITLE = "subtitle"
+    SETTINGS = "settings"
     SEARCH = "search"
 
 
@@ -173,6 +177,14 @@ class MediaType(str, Enum):
     TVSHOW = "TVSHOW"
     MOVIE = "MOVIE"
     VIDEO = "VIDEO"
+
+
+class RepeatMode(str, Enum):
+    """Repeat modes."""
+
+    OFF = "OFF"
+    ALL = "ALL"
+    ONE = "ONE"
 
 
 class MediaPlayer(Entity):

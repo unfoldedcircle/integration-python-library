@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Added
+- Media-player RepeatMode enum and new features: context_menu, settings
+
 ---
 
 ## v0.1.5 - 2024-02-28
