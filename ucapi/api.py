@@ -25,6 +25,7 @@ from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 import ucapi.api_definitions as uc
+from ucapi import media_player
 from ucapi.entities import Entities
 
 _LOG = logging.getLogger(__name__)
@@ -258,10 +259,14 @@ class IntegrationAPI:
         :param category: event category
         """
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
+        data_dump = json.dumps(data)
+        # filter fields
+        if _LOG.isEnabledFor(logging.DEBUG):
+            data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
 
         for websocket in self._clients:
-            data_dump = json.dumps(data)
-            _LOG.debug("[%s] ->: %s", websocket.remote_address, data_dump)
+            if _LOG.isEnabledFor(logging.DEBUG):
+                _LOG.debug("[%s] ->: %s", websocket.remote_address, data_log)
             try:
                 await websocket.send(data_dump)
             except websockets.exceptions.WebSocketException:
@@ -282,10 +287,12 @@ class IntegrationAPI:
             websockets.ConnectionClosed: When the connection is closed.
         """
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
+        data_dump = json.dumps(data)
 
         if websocket in self._clients:
-            data_dump = json.dumps(data)
-            _LOG.debug("[%s] ->: %s", websocket.remote_address, data_dump)
+            if _LOG.isEnabledFor(logging.DEBUG):
+                data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
+                _LOG.debug("[%s] ->: %s", websocket.remote_address, data_log)
             await websocket.send(data_dump)
         else:
             _LOG.error("Error sending event: connection no longer established")
@@ -843,3 +850,29 @@ def local_hostname() -> str:
         os.getenv("UC_MDNS_LOCAL_HOSTNAME")
         or f"{socket.gethostname().split('.', 1)[0]}.local."
     )
+
+
+def filter_log_msg_data(data: dict[str, Any]) -> bool:
+    """
+    Filter attribute fields to exclude for log messages in the given msg data dict.
+
+    Attention: the dictionary is modified!
+
+    - Attributes are filtered in `data["msg_data"]["attributes"]`
+    - Filtered attributes: `MEDIA_IMAGE_URL`
+
+    :param data: the message data dict
+    :return: True if a field was filtered, False otherwise
+    """
+    # filter out base64 encoded images in the media player's media_image_url attribute
+    if (
+        "msg_data" in data
+        and "attributes" in data["msg_data"]
+        and media_player.Attributes.MEDIA_IMAGE_URL in data["msg_data"]["attributes"]
+        and data["msg_data"]["attributes"][
+            media_player.Attributes.MEDIA_IMAGE_URL
+        ].startswith("data:")
+    ):
+        data["msg_data"]["attributes"][media_player.Attributes.MEDIA_IMAGE_URL] = "***"
+        return True
+    return False
