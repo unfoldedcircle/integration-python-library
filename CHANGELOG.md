@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Changed
+- Filter out base64 encoded media-player image fields in log messages ([#17](https://github.com/unfoldedcircle/integration-python-library/issues/17)).
+
 ---
 
 ## v0.1.6 - 2024-03-04
