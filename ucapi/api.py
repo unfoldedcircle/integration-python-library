@@ -6,6 +6,7 @@ Integration driver API for Remote Two.
 """
 
 import asyncio
+import dataclasses
 import json
 import logging
 import os
@@ -30,6 +31,15 @@ from ucapi.entities import Entities
 
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
+
+
+class _EnhancedJSONEncoder(json.JSONEncoder):
+    """Python dataclass json encoder."""
+
+    def default(self, o):
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+        return super().default(o)
 
 
 class IntegrationAPI:
@@ -239,7 +249,7 @@ class IntegrationAPI:
         }
 
         if websocket in self._clients:
-            data_dump = json.dumps(data)
+            data_dump = json.dumps(data, cls=_EnhancedJSONEncoder)
             _LOG.debug("[%s] ->: %s", websocket.remote_address, data_dump)
             await websocket.send(data_dump)
         else:
@@ -259,10 +269,14 @@ class IntegrationAPI:
         :param category: event category
         """
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
-        data_dump = json.dumps(data)
+        data_dump = json.dumps(data, cls=_EnhancedJSONEncoder)
         # filter fields
         if _LOG.isEnabledFor(logging.DEBUG):
-            data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
+            data_log = (
+                json.dumps(data, cls=_EnhancedJSONEncoder)
+                if filter_log_msg_data(data)
+                else data_dump
+            )
 
         for websocket in self._clients:
             if _LOG.isEnabledFor(logging.DEBUG):
@@ -287,11 +301,15 @@ class IntegrationAPI:
             websockets.ConnectionClosed: When the connection is closed.
         """
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
-        data_dump = json.dumps(data)
+        data_dump = json.dumps(data, cls=_EnhancedJSONEncoder)
 
         if websocket in self._clients:
             if _LOG.isEnabledFor(logging.DEBUG):
-                data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
+                data_log = (
+                    json.dumps(data, cls=_EnhancedJSONEncoder)
+                    if filter_log_msg_data(data)
+                    else data_dump
+                )
                 _LOG.debug("[%s] ->: %s", websocket.remote_address, data_log)
             await websocket.send(data_dump)
         else:

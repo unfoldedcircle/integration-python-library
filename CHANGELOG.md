@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Added
+- New remote-entity type. Requires remote-core / Core Simulator version 0.43.0 or newer.
+
 ---
 
 ## v0.1.7 - 2024-03-13
