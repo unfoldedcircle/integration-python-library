@@ -9,16 +9,16 @@ from typing import Any
 import ucapi
 from ucapi import remote
 from ucapi.remote import *
+from ucapi.remote import create_send_cmd, create_sequence_cmd
 from ucapi.ui import (
     Buttons,
     DeviceButtonMapping,
-    create_btn_mapping,
     Size,
-    create_ui_text,
-    create_ui_icon,
     UiPage,
+    create_btn_mapping,
+    create_ui_icon,
+    create_ui_text,
 )
-from ucapi.remote import create_send_cmd, create_sequence_cmd
 
 loop = asyncio.get_event_loop()
 api = ucapi.IntegrationAPI(loop)
