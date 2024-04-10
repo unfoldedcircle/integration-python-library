@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Remote entity integration example. Bare minimum of an integration driver."""
 import asyncio
+import json
 import logging
 import sys
 from typing import Any
@@ -8,10 +9,21 @@ from typing import Any
 import ucapi
 from ucapi import remote
 from ucapi.remote import *
+from ucapi.ui import (
+    Buttons,
+    DeviceButtonMapping,
+    create_btn_mapping,
+    Size,
+    create_ui_text,
+    create_ui_icon,
+    UiPage,
+)
+from ucapi.remote import create_send_cmd, create_sequence_cmd
 
 loop = asyncio.get_event_loop()
 api = ucapi.IntegrationAPI(loop)
 
+# Simple commands which are supported by this example remote-entity
 supported_commands = [
     "VOLUME_UP",
     "VOLUME_DOWN",
@@ -23,6 +35,13 @@ supported_commands = [
     "CURSOR_LEFT",
     "CURSOR_RIGHT",
     "CURSOR_ENTER",
+    "MY_RECORDINGS",
+    "MY_APPS",
+    "REVERSE",
+    "PLAY",
+    "PAUSE",
+    "FORWARD",
+    "RECORD",
 ]
 
 
@@ -54,6 +73,9 @@ async def cmd_handler(
                 state = remote.States.OFF
         case remote.Commands.SEND_CMD:
             command = params.get("command")
+            # It's up to the integration what to do with an unknown command.
+            # If the supported commands are provided as simple_commands, then it's
+            # easy to validate.
             if command not in supported_commands:
                 print(f"Unknown command: {command}", file=sys.stderr)
                 return ucapi.StatusCodes.BAD_REQUEST
@@ -84,11 +106,13 @@ async def cmd_handler(
 
 @api.listens_to(ucapi.Events.CONNECT)
 async def on_connect() -> None:
-    # When the remote connects, we just set the device state. We are ready all the time!
+    """When the UCR2 connects, send the device state."""
+    # This example is ready all the time!
     await api.set_device_state(ucapi.DeviceStates.CONNECTED)
 
 
-def create_button_mappings() -> list[DeviceButtonMapping]:
+def create_button_mappings() -> list[DeviceButtonMapping | dict[str, Any]]:
+    """Create a demo button mapping showing different composition options."""
     return [
         # simple short- and long-press mapping
         create_btn_mapping(Buttons.HOME, "HOME", "GUIDE"),
@@ -116,10 +140,19 @@ def create_button_mappings() -> list[DeviceButtonMapping]:
                 delay=200,
             ),
         ),
+        # Safety off: don't use a DeviceButtonMapping data class but a dictionary.
+        # This is useful for directly reading a json configuration file.
+        {"button": "POWER", "short_press": {"cmd_id": "remote.toggle"}},
     ]
 
 
-def create_ui() -> list[UiPage]:
+def create_ui() -> list[UiPage | dict[str, Any]]:
+    """Create a demo user interface showing different composition options."""
+    # Safety off again: directly use json structure to read a configuration file
+    with open("remote_ui_page.json", "r", encoding="utf-8") as file:
+        main_page = json.load(file)
+
+    # On-the-fly UI composition
     ui_page1 = UiPage("page1", "Main")
     ui_page1.add(create_ui_text("Hello remote entity", 0, 0, size=Size(4, 1)))
     ui_page1.add(create_ui_icon("uc:home", 0, 2, cmd="HOME"))
@@ -159,7 +192,7 @@ def create_ui() -> list[UiPage]:
     ui_page2.add(create_ui_text("On", 0, 5, cmd="on"))
     ui_page2.add(create_ui_text("Off", 1, 5, cmd="off"))
 
-    return [ui_page1, ui_page2]
+    return [main_page, ui_page1, ui_page2]
 
 
 if __name__ == "__main__":
