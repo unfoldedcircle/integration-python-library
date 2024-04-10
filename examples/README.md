@@ -19,6 +19,12 @@ to start with an integration driver for the Remote Two.
 
 It defines a single push button with a callback handler. When pushed, it just prints a message in the console.
 
+## remote
+
+The [remote.py](remote.py) example shows how to use the [remote-entity](https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_remote.md).
+
+It defines some simple commands, a custom button mapping and user interface pages for the available commands. 
+
 ## setup_flow
 
 The [setup_flow](setup_flow.py) example shows how to define a dynamic setup flow for the driver setup.
