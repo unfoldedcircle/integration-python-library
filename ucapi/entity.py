@@ -23,6 +23,7 @@ class EntityTypes(str, Enum):
     CLIMATE = "climate"
     LIGHT = "light"
     MEDIA_PLAYER = "media_player"
+    REMOTE = "remote"
     SENSOR = "sensor"
     SWITCH = "switch"
 
@@ -42,8 +43,8 @@ class Entity:
         entity_type: EntityTypes,
         features: list[str],
         attributes: dict[str, Any],
-        device_class: str | None,
-        options: dict[str, Any] | None,
+        device_class: str | None = None,
+        options: dict[str, Any] | None = None,
         area: str | None = None,
         cmd_handler: CommandHandler = None,
     ):

@@ -59,8 +59,6 @@ class Button(Entity):
             EntityTypes.BUTTON,
             ["press"],
             {Attributes.STATE: States.AVAILABLE},
-            None,
-            None,
-            area,
-            cmd_handler,
+            area=area,
+            cmd_handler=cmd_handler,
         )

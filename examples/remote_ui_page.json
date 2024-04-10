@@ -1,0 +1,65 @@
+{
+  "page_id": "media",
+  "name": "Media",
+  "grid": { "width": 4, "height": 6 },
+  "items": [
+    {
+      "type": "text",
+      "text": "Recordings",
+      "command": {
+        "cmd_id": "MY_RECORDINGS"
+      },
+      "location": { "x": 0, "y": 2 },
+      "size": { "width": 2, "height": 1 }
+    },
+    {
+      "type": "text",
+      "text": "Apps",
+      "command": {
+        "cmd_id": "MY_APPS"
+      },
+      "location": { "x": 2, "y": 2 },
+      "size": { "width": 2, "height": 1 }
+    },
+    {
+      "type": "icon",
+      "icon": "uc:bw",
+      "command": {
+        "cmd_id": "REVERSE"
+      },
+      "location": { "x": 0, "y": 5 }
+    },
+    {
+      "type": "icon",
+      "icon": "uc:play",
+      "command": {
+        "cmd_id": "PLAY"
+      },
+      "location": { "x": 1, "y": 5 }
+    },
+    {
+      "type": "icon",
+      "icon": "uc:pause",
+      "command": {
+        "cmd_id": "PAUSE"
+      },
+      "location": { "x": 2, "y": 5 }
+    },
+    {
+      "type": "icon",
+      "icon": "uc:ff",
+      "command": {
+        "cmd_id": "FORWARD"
+      },
+      "location": { "x": 3, "y": 5 }
+    },
+    {
+      "type": "icon",
+      "icon": "uc:rec",
+      "command": {
+        "cmd_id": "RECORD"
+      },
+      "location": { "x": 2, "y": 4 }
+    }
+  ]
+}
