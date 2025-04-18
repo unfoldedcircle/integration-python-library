@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Added
+- New media-player attribute MEDIA_POSITION_UPDATED_AT ([feature-and-bug-tracker#443](https://github.com/unfoldedcircle/feature-and-bug-tracker/issues/443)).
+
 ---
 
 ## v0.2.0 - 2024-04-28

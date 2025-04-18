@@ -78,6 +78,7 @@ class Attributes(str, Enum):
     MUTED = "muted"
     MEDIA_DURATION = "media_duration"
     MEDIA_POSITION = "media_position"
+    MEDIA_POSITION_UPDATED_AT = "media_position_updated_at"
     MEDIA_TYPE = "media_type"
     MEDIA_IMAGE_URL = "media_image_url"
     MEDIA_TITLE = "media_title"
