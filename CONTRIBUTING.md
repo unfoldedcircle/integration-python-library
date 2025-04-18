@@ -25,7 +25,7 @@ We love contributions from everyone.
 Either by opening a feature request describing your proposed changes before submitting code, or by contacting us on
 one of the other [feedback channels](#feedback-speech_balloon).
 
-Since this library is being used in integration drivers running on the embedded Remote Two device,
+Since this library is being used in integration drivers running on the embedded UC Remote devices,
 we have to make sure it remains compatible with the embedded runtime environment and runs smoothly.
 
 Submitting pull requests for typos, formatting issues etc. are happily accepted and usually approved relatively quick.  
@@ -36,7 +36,8 @@ With that out of the way, here's the process of creating a pull request and maki
 
 1. Fork the repo.
 
-2. Make your changes or enhancements (preferably on a feature-branch).
+2. Make your changes or enhancements.  
+   This should be done in a dedicated branch and not on the main branch to easily submit individual pull requests.
 
    Contributed code must be licensed under the [Mozilla Public License 2.0](https://choosealicense.com/licenses/mpl-2.0/),
    or a compatible license, if existing parts of other projects are reused (e.g. MIT licensed code).  
@@ -53,13 +54,16 @@ With that out of the way, here's the process of creating a pull request and maki
 
 3. Make sure your changes follow the project's code style and the lints pass described in [Code Style](docs/code_guidelines.md).
 
-4. Push to your fork.
+4. Push to your fork.  
+   Do not include any project configuration changes in the `.idea` folder! If you are also using an IntelliJ product,
+   chances are that you're using a different IDE, version or other settings, which can cause issues.
+   For example, between IntelliJ Ultimate and PyCharm.
 
 5. Submit a pull request.
 
 At this point we will review the PR and give constructive feedback.  
 This is a time for discussion and improvements, and making the necessary changes will be required before we can
-merge the contribution.
+merge the contribution. Furthermore, all the automated checks must pass, otherwise the pull request will not be merged.
 
 ### Feedback :speech_balloon:
 

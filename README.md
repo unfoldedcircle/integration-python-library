@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/github/license/unfoldedcircle/integration-python-library.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-This library simplifies writing Python based integrations for the [Unfolded Circle Remote Two](https://www.unfoldedcircle.com/)
+This library simplifies writing Python-based integrations for the [Unfolded Circle Remote devices](https://www.unfoldedcircle.com/)
 by wrapping the [WebSocket Integration API](https://github.com/unfoldedcircle/core-api/tree/main/integration-api).
 
 It's an alpha release (in our eyes). Breaking changes are to be expected and missing features will be continuously added.
