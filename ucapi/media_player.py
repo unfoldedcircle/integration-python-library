@@ -194,8 +194,9 @@ class MediaPlayer(Entity):
 
     See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_media_player.md
     for more information.
-    """  # noqa
+    """
 
+    # pylint: disable=R0917
     def __init__(
         self,
         identifier: str,

@@ -210,6 +210,7 @@ class IntegrationAPI:
         """
         await self._send_ws_response(websocket, req_id, "result", msg_data, status_code)
 
+    # pylint: disable=R0917
     async def _send_ws_response(
         self,
         websocket,
@@ -635,6 +636,7 @@ class IntegrationAPI:
             websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE
         )
 
+    # pylint: disable=R0917
     async def request_driver_setup_user_confirmation(
         self,
         websocket,

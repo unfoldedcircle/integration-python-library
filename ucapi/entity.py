@@ -36,6 +36,7 @@ class Entity:
     for more information.
     """
 
+    # pylint: disable=R0917
     def __init__(
         self,
         identifier: str,
