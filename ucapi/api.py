@@ -16,11 +16,11 @@ from typing import Any, Callable
 import websockets
 from pyee.asyncio import AsyncIOEventEmitter
 
+# Note: websockets ~v15 doesn't have websockets.server anymore
+from websockets import serve
+
 # workaround for pylint error: E0611: No name 'ConnectionClosedOK' in module 'websockets' (no-name-in-module)  # noqa
 from websockets.exceptions import ConnectionClosedOK
-
-# workaround for pylint error: E1101: Module 'websockets' has no 'serve' member (no-member)  # noqa
-from websockets.server import serve
 from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
@@ -210,6 +210,7 @@ class IntegrationAPI:
         """
         await self._send_ws_response(websocket, req_id, "result", msg_data, status_code)
 
+    # pylint: disable=R0917
     async def _send_ws_response(
         self,
         websocket,
@@ -635,6 +636,7 @@ class IntegrationAPI:
             websocket, uc.WsMsgEvents.DRIVER_SETUP_CHANGE, data, uc.EventCategory.DEVICE
         )
 
+    # pylint: disable=R0917
     async def request_driver_setup_user_confirmation(
         self,
         websocket,

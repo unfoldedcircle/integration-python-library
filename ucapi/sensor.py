@@ -64,8 +64,9 @@ class Sensor(Entity):
 
     See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_sensor.md
     for more information.
-    """  # noqa
+    """
 
+    # pylint: disable=R0917
     def __init__(
         self,
         identifier: str,
