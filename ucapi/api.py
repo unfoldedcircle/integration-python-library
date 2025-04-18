@@ -241,7 +241,9 @@ class IntegrationAPI:
 
         if websocket in self._clients:
             data_dump = json.dumps(data)
-            _LOG.debug("[%s] ->: %s", websocket.remote_address, data_dump)
+            if _LOG.isEnabledFor(logging.DEBUG):
+                data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
+                _LOG.debug("[%s] ->: %s", websocket.remote_address, data_log)
             await websocket.send(data_dump)
         else:
             _LOG.error("Error sending response: connection no longer established")
@@ -267,7 +269,7 @@ class IntegrationAPI:
 
         for websocket in self._clients:
             if _LOG.isEnabledFor(logging.DEBUG):
-                _LOG.debug("[%s] ->: %s", websocket.remote_address, data_log)
+                _LOG.debug("[%s] =>: %s", websocket.remote_address, data_log)
             try:
                 await websocket.send(data_dump)
             except websockets.exceptions.WebSocketException:
@@ -470,7 +472,7 @@ class IntegrationAPI:
         self, websocket, req_id: int, msg_data: dict[str, Any] | None
     ) -> None:
         if not msg_data:
-            _LOG.warning("Ignoring _entity_command: called with empty msg_data")
+            _LOG.warning("Ignoring entity command: called with empty msg_data")
             await self.acknowledge_command(
                 websocket, req_id, uc.StatusCodes.BAD_REQUEST
             )
@@ -860,21 +862,41 @@ def filter_log_msg_data(data: dict[str, Any]) -> bool:
 
     Attention: the dictionary is modified!
 
-    - Attributes are filtered in `data["msg_data"]["attributes"]`
+    - Attributes are filtered in `data["msg_data"]`:
+      - dict object: key `attributes`
+      - list object: every list item `attributes`
     - Filtered attributes: `MEDIA_IMAGE_URL`
 
     :param data: the message data dict
     :return: True if a field was filtered, False otherwise
     """
     # filter out base64 encoded images in the media player's media_image_url attribute
-    if (
-        "msg_data" in data
-        and "attributes" in data["msg_data"]
-        and media_player.Attributes.MEDIA_IMAGE_URL in data["msg_data"]["attributes"]
-        and data["msg_data"]["attributes"][
-            media_player.Attributes.MEDIA_IMAGE_URL
-        ].startswith("data:")
-    ):
-        data["msg_data"]["attributes"][media_player.Attributes.MEDIA_IMAGE_URL] = "***"
-        return True
+    if "msg_data" in data:
+        if (
+            "attributes" in data["msg_data"]
+            and media_player.Attributes.MEDIA_IMAGE_URL
+            in data["msg_data"]["attributes"]
+            and data["msg_data"]["attributes"][
+                media_player.Attributes.MEDIA_IMAGE_URL
+            ].startswith("data:")
+        ):
+            data["msg_data"]["attributes"][
+                media_player.Attributes.MEDIA_IMAGE_URL
+            ] = "data:***"
+            return True
+
+        if isinstance(data["msg_data"], list):
+            for item in data["msg_data"]:
+                if (
+                    "attributes" in item
+                    and media_player.Attributes.MEDIA_IMAGE_URL in item["attributes"]
+                    and item["attributes"][
+                        media_player.Attributes.MEDIA_IMAGE_URL
+                    ].startswith("data:")
+                ):
+                    item["attributes"][
+                        media_player.Attributes.MEDIA_IMAGE_URL
+                    ] = "data:***"
+            return True
+
     return False
