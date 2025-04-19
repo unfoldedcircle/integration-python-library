@@ -22,7 +22,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "pyee>=9.0",
-    "websockets>=11.0",
+    "websockets>=14.0",
     "zeroconf>=0.120.0",
 ]
 dynamic = ["version"]
@@ -36,7 +36,7 @@ content-type = "text/markdown; charset=UTF-8"
 "Source Code" = "https://github.com/unfoldedcircle/integration-python-library"
 "Bug Reports" = "https://github.com/unfoldedcircle/integration-python-library/issues"
 "Discord"     = "http://unfolded.chat/"
-"Forum"       = "http://unfolded.community/"
+"Forum"       = "https://unfolded.community/"
 
 [project.optional-dependencies]
 testing = [
