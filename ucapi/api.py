@@ -16,7 +16,7 @@ from typing import Any, Callable
 import websockets
 from pyee.asyncio import AsyncIOEventEmitter
 
-# Note: websockets ~v15 doesn't have websockets.server anymore
+# Note: websockets v14 doesn't have websockets.server anymore
 from websockets import serve
 
 # workaround for pylint error: E0611: No name 'ConnectionClosedOK' in module 'websockets' (no-name-in-module)  # noqa
@@ -163,6 +163,7 @@ class IntegrationAPI:
             _LOG.info("WS: Connection closed")
 
         except websockets.exceptions.ConnectionClosedError as e:
+            # no idea why they made code & reason deprecated...
             _LOG.info("WS: Connection closed with error %d: %s", e.code, e.reason)
 
         except websockets.exceptions.WebSocketException as e:
@@ -264,6 +265,7 @@ class IntegrationAPI:
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
         data_dump = json.dumps(data)
         # filter fields
+        data_log = ""
         if _LOG.isEnabledFor(logging.DEBUG):
             data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
 
