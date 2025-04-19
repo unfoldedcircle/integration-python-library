@@ -28,6 +28,11 @@ import ucapi.api_definitions as uc
 from ucapi import media_player
 from ucapi.entities import Entities
 
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "unknown"
+
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
 
@@ -125,9 +130,10 @@ class IntegrationAPI:
         )
 
         _LOG.info(
-            "Driver is up: %s, version: %s, listening on: %s:%d",
+            "Driver is up: %s, version: %s, api: %s, listening on: %s:%d",
             self._driver_info["driver_id"],
             self._driver_info["version"],
+            __version__,
             host,
             port,
         )
