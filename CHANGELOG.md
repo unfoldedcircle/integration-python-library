@@ -11,6 +11,9 @@ _Changes in the next release_
 
 ### Added
 - New media-player attribute MEDIA_POSITION_UPDATED_AT ([feature-and-bug-tracker#443](https://github.com/unfoldedcircle/feature-and-bug-tracker/issues/443)).
+### Changed
+- Filter out base64 encoded media-player image fields in entity_states response log messages ([#22](https://github.com/unfoldedcircle/integration-python-library/issues/22)).
+- Require websockets version v14 or newer. 
 
 ---
 
