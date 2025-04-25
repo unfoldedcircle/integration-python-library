@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     name: Verify Python build context
     steps:
@@ -39,7 +39,7 @@ jobs:
   build:
     name: Build and publish PyPi package
     needs: verify
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.repository_owner == 'unfoldedcircle'
     steps:
       - uses: actions/checkout@v4
