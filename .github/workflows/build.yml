@@ -1,0 +1,42 @@
+# GitHub Action to run unit tests
+---
+name: "Unit tests"
+
+on:
+  push:
+    paths:
+      - 'tests/**'
+      - 'ucapi/**'
+      - 'requirements.txt'
+      - 'test-requirements.txt'
+      - '.github/**/*.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Unit tests
+        run: |
+          python -m unittest discover tests
