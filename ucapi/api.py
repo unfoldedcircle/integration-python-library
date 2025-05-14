@@ -11,6 +11,7 @@ import logging
 import os
 import socket
 from asyncio import AbstractEventLoop
+from copy import deepcopy
 from typing import Any, Callable
 
 import websockets
@@ -25,8 +26,8 @@ from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 import ucapi.api_definitions as uc
-from ucapi import media_player
 from ucapi.entities import Entities
+from ucapi.media_player import Attributes as MediaAttr
 
 try:
     from ._version import version as __version__
@@ -249,8 +250,9 @@ class IntegrationAPI:
         if websocket in self._clients:
             data_dump = json.dumps(data)
             if _LOG.isEnabledFor(logging.DEBUG):
-                data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
-                _LOG.debug("[%s] ->: %s", websocket.remote_address, data_log)
+                _LOG.debug(
+                    "[%s] ->: %s", websocket.remote_address, filter_log_msg_data(data)
+                )
             await websocket.send(data_dump)
         else:
             _LOG.error("Error sending response: connection no longer established")
@@ -270,14 +272,12 @@ class IntegrationAPI:
         """
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
         data_dump = json.dumps(data)
-        # filter fields
-        data_log = ""
-        if _LOG.isEnabledFor(logging.DEBUG):
-            data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
 
         for websocket in self._clients:
             if _LOG.isEnabledFor(logging.DEBUG):
-                _LOG.debug("[%s] =>: %s", websocket.remote_address, data_log)
+                _LOG.debug(
+                    "[%s] =>: %s", websocket.remote_address, filter_log_msg_data(data)
+                )
             try:
                 await websocket.send(data_dump)
             except websockets.exceptions.WebSocketException:
@@ -302,8 +302,9 @@ class IntegrationAPI:
 
         if websocket in self._clients:
             if _LOG.isEnabledFor(logging.DEBUG):
-                data_log = json.dumps(data) if filter_log_msg_data(data) else data_dump
-                _LOG.debug("[%s] ->: %s", websocket.remote_address, data_log)
+                _LOG.debug(
+                    "[%s] ->: %s", websocket.remote_address, filter_log_msg_data(data)
+                )
             await websocket.send(data_dump)
         else:
             _LOG.error("Error sending event: connection no longer established")
@@ -864,11 +865,9 @@ def local_hostname() -> str:
     )
 
 
-def filter_log_msg_data(data: dict[str, Any]) -> bool:
+def filter_log_msg_data(data: dict[str, Any]) -> dict[str, Any]:
     """
     Filter attribute fields to exclude for log messages in the given msg data dict.
-
-    Attention: the dictionary is modified!
 
     - Attributes are filtered in `data["msg_data"]`:
       - dict object: key `attributes`
@@ -876,35 +875,32 @@ def filter_log_msg_data(data: dict[str, Any]) -> bool:
     - Filtered attributes: `MEDIA_IMAGE_URL`
 
     :param data: the message data dict
-    :return: True if a field was filtered, False otherwise
+    :return: copy of the message data dict with filtered attributes
     """
-    # filter out base64 encoded images in the media player's media_image_url attribute
-    if "msg_data" in data:
-        if (
-            "attributes" in data["msg_data"]
-            and media_player.Attributes.MEDIA_IMAGE_URL
-            in data["msg_data"]["attributes"]
-            and data["msg_data"]["attributes"][
-                media_player.Attributes.MEDIA_IMAGE_URL
-            ].startswith("data:")
-        ):
-            data["msg_data"]["attributes"][
-                media_player.Attributes.MEDIA_IMAGE_URL
-            ] = "data:***"
-            return True
+    # do not modify the original dict
+    log_upd = deepcopy(data)
+    if not log_upd:
+        return {}
 
-        if isinstance(data["msg_data"], list):
-            for item in data["msg_data"]:
+    # filter out base64 encoded images in the media player's media_image_url attribute
+    if "msg_data" in log_upd:
+        if (
+            "attributes" in log_upd["msg_data"]
+            and MediaAttr.MEDIA_IMAGE_URL in log_upd["msg_data"]["attributes"]
+            and log_upd["msg_data"]["attributes"][MediaAttr.MEDIA_IMAGE_URL].startswith(
+                "data:"
+            )
+        ):
+            log_upd["msg_data"]["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:***"
+        elif isinstance(log_upd["msg_data"], list):
+            for item in log_upd["msg_data"]:
                 if (
                     "attributes" in item
-                    and media_player.Attributes.MEDIA_IMAGE_URL in item["attributes"]
-                    and item["attributes"][
-                        media_player.Attributes.MEDIA_IMAGE_URL
-                    ].startswith("data:")
+                    and MediaAttr.MEDIA_IMAGE_URL in item["attributes"]
+                    and item["attributes"][MediaAttr.MEDIA_IMAGE_URL].startswith(
+                        "data:"
+                    )
                 ):
-                    item["attributes"][
-                        media_player.Attributes.MEDIA_IMAGE_URL
-                    ] = "data:***"
-            return True
+                    item["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:***"
 
-    return False
+    return log_upd
