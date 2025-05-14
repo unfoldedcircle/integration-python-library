@@ -11,6 +11,10 @@ _Changes in the next release_
 
 ---
 
+## v0.3.1 - 2024-05-14
+### Fixed
+- Filtered log messages may not modify original data. This sporadically removed media artwork URLs ([#27](https://github.com/unfoldedcircle/integration-python-library/pull/27)).
+
 ## v0.3.0 - 2024-04-25
 ### Added
 - New media-player attribute MEDIA_POSITION_UPDATED_AT ([feature-and-bug-tracker#443](https://github.com/unfoldedcircle/feature-and-bug-tracker/issues/443)).
