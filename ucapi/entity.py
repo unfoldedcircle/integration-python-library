@@ -26,6 +26,7 @@ class EntityTypes(str, Enum):
     REMOTE = "remote"
     SENSOR = "sensor"
     SWITCH = "switch"
+    IR_EMITTER = "ir_emitter"
 
 
 class Entity:
