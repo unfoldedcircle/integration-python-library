@@ -41,7 +41,9 @@ class Buttons(str, Enum):
     PLAY = "PLAY"
     NEXT = "NEXT"
     POWER = "POWER"
-
+    STOP = "STOP"
+    RECORD = "RECORD"
+    MENU = "MENU"
 
 @dataclass
 class DeviceButtonMapping:
