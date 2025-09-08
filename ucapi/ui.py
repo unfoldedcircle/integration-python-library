@@ -45,6 +45,7 @@ class Buttons(str, Enum):
     RECORD = "RECORD"
     MENU = "MENU"
 
+
 @dataclass
 class DeviceButtonMapping:
     """Physical button command mapping."""
