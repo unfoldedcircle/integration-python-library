@@ -11,6 +11,11 @@ _Changes in the next release_
 
 ---
 
+## v0.3.2 - 2025-09-17
+### Changed
+- Add support for IR Emitter EntityType ([#31](https://github.com/unfoldedcircle/integration-python-library/pull/31)).
+- Add stop, record and menu for remote entity buttons ([#32](https://github.com/unfoldedcircle/integration-python-library/pull/32)).
+
 ## v0.3.1 - 2025-05-14
 ### Fixed
 - Filtered log messages may not modify original data. This sporadically removed media artwork URLs ([#27](https://github.com/unfoldedcircle/integration-python-library/pull/27)).
