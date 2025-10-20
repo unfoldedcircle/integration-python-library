@@ -887,9 +887,12 @@ def filter_log_msg_data(data: dict[str, Any]) -> dict[str, Any]:
         if (
             "attributes" in log_upd["msg_data"]
             and MediaAttr.MEDIA_IMAGE_URL in log_upd["msg_data"]["attributes"]
-            and log_upd["msg_data"]["attributes"][MediaAttr.MEDIA_IMAGE_URL].startswith(
-                "data:"
+            and (
+                media_image_url := log_upd["msg_data"]["attributes"][
+                    MediaAttr.MEDIA_IMAGE_URL
+                ]
             )
+            and media_image_url.startswith("data:")
         ):
             log_upd["msg_data"]["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:***"
         elif isinstance(log_upd["msg_data"], list):
@@ -897,9 +900,10 @@ def filter_log_msg_data(data: dict[str, Any]) -> dict[str, Any]:
                 if (
                     "attributes" in item
                     and MediaAttr.MEDIA_IMAGE_URL in item["attributes"]
-                    and item["attributes"][MediaAttr.MEDIA_IMAGE_URL].startswith(
-                        "data:"
+                    and (
+                        media_image_url := item["attributes"][MediaAttr.MEDIA_IMAGE_URL]
                     )
+                    and media_image_url.startswith("data:")
                 ):
                     item["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:***"
 
