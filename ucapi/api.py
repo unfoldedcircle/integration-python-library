@@ -162,24 +162,35 @@ class IntegrationAPI:
             # authenticate on connection
             await self._authenticate(websocket, True)
 
+            self._events.emit(uc.Events.CLIENT_CONNECTED)
+
             async for message in websocket:
                 # process message
                 await self._process_ws_message(websocket, message)
 
         except ConnectionClosedOK:
-            _LOG.info("WS: Connection closed")
+            _LOG.info("[%s] WS: Connection closed", websocket.remote_address)
 
         except websockets.exceptions.ConnectionClosedError as e:
             # no idea why they made code & reason deprecated...
-            _LOG.info("WS: Connection closed with error %d: %s", e.code, e.reason)
+            _LOG.info(
+                "[%s] WS: Connection closed with error %d: %s",
+                websocket.remote_address,
+                e.code,
+                e.reason,
+            )
 
         except websockets.exceptions.WebSocketException as e:
-            _LOG.error("WS: Connection closed due to processing error: %s", e)
+            _LOG.error(
+                "[%s] WS: Connection closed due to processing error: %s",
+                websocket.remote_address,
+                e,
+            )
 
         finally:
             self._clients.remove(websocket)
-            _LOG.info("WS: Client removed")
-            self._events.emit(uc.Events.DISCONNECT)
+            _LOG.info("[%s] WS: Client removed", websocket.remote_address)
+            self._events.emit(uc.Events.CLIENT_DISCONNECTED)
 
     async def _send_ok_result(
         self, websocket, req_id: int, msg_data: dict[str, Any] | list | None = None
@@ -762,6 +773,11 @@ class IntegrationAPI:
     ##############
     # Properties #
     ##############
+
+    @property
+    def client_count(self) -> int:
+        """Return number of WebSocket clients."""
+        return len(self._clients)
 
     @property
     def device_state(self) -> uc.DeviceStates:

@@ -82,13 +82,23 @@ class WsMsgEvents(str, Enum):
 class Events(str, Enum):
     """Internal library events."""
 
+    CLIENT_CONNECTED = "client_connected"
+    """WebSocket client connected."""
+    CLIENT_DISCONNECTED = "client_disconnected"
+    """WebSocket client disconnected."""
     ENTITY_ATTRIBUTES_UPDATED = "entity_attributes_updated"
     SUBSCRIBE_ENTITIES = "subscribe_entities"
+    """Integration API `subscribe_events` message."""
     UNSUBSCRIBE_ENTITIES = "unsubscribe_entities"
+    """Integration API `unsubscribe_events` message."""
     CONNECT = "connect"
+    """Integration-API `connect` event message."""
     DISCONNECT = "disconnect"
+    """Integration-API `disconnect` event message."""
     ENTER_STANDBY = "enter_standby"
+    """Integration-API `enter_standby` event message."""
     EXIT_STANDBY = "exit_standby"
+    """Integration-API `exit_standby` event message."""
 
 
 # Does EventCategory need to be public?
