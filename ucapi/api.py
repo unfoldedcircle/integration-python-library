@@ -29,6 +29,12 @@ import ucapi.api_definitions as uc
 from ucapi.entities import Entities
 from ucapi.media_player import Attributes as MediaAttr
 
+# Protobuf IntegrationMessage support (optional at runtime)
+try:
+    from ucapi.proto import ucr_integration_voice_pb2 as voice_pb2
+except Exception:  # pragma: no cover - optional dependency at runtime
+    voice_pb2 = None  # type: ignore
+
 try:
     from ._version import version as __version__
 except ImportError:
@@ -165,8 +171,19 @@ class IntegrationAPI:
             self._events.emit(uc.Events.CLIENT_CONNECTED)
 
             async for message in websocket:
-                # process message
-                await self._process_ws_message(websocket, message)
+                # Distinguish between text (str) and binary (bytes-like) messages
+                if isinstance(message, str):
+                    # JSON text message
+                    await self._process_ws_message(websocket, message)
+                elif isinstance(message, (bytes, bytearray, memoryview)):
+                    # Binary message (protobuf in future)
+                    await self._process_ws_binary_message(websocket, bytes(message))
+                else:
+                    _LOG.warning(
+                        "[%s] WS: Unsupported message type %s",
+                        websocket.remote_address,
+                        type(message).__name__,
+                    )
 
         except ConnectionClosedOK:
             _LOG.info("[%s] WS: Connection closed", websocket.remote_address)
@@ -338,6 +355,99 @@ class IntegrationAPI:
                 await self._handle_ws_request_msg(websocket, msg, req_id, msg_data)
         elif kind == "event":
             await self._handle_ws_event_msg(msg, msg_data)
+
+    async def _process_ws_binary_message(self, websocket, data: bytes) -> None:
+        """Process a binary WebSocket message using protobuf IntegrationMessage.
+
+        - Deserializes ``IntegrationMessage`` from the incoming bytes.
+        - Dispatches to specific handlers based on the concrete oneof field.
+        - Logs errors on deserialization failures and unknown message kinds.
+        """
+        if _LOG.isEnabledFor(logging.DEBUG):
+            _LOG.debug(
+                "[%s] <-: <binary %d bytes>", websocket.remote_address, len(data)
+            )
+
+        if voice_pb2 is None:
+            _LOG.error(
+                "[%s] WS: Received binary data but protobuf module is not available",
+                websocket.remote_address,
+            )
+            return
+
+        # Parse IntegrationMessage from bytes
+        try:
+            imsg = voice_pb2.IntegrationMessage()
+            imsg.ParseFromString(data)
+        except Exception as exc:
+            _LOG.error(
+                "[%s] WS: Failed to parse IntegrationMessage (%d bytes): %s",
+                websocket.remote_address,
+                len(data),
+                exc,
+            )
+            return
+
+        kind = imsg.WhichOneof("message")
+        if kind == "voice_begin":
+            await self._on_remote_voice_begin(websocket, imsg.voice_begin)
+        elif kind == "voice_data":
+            await self._on_remote_voice_data(websocket, imsg.voice_data)
+        elif kind == "voice_end":
+            await self._on_remote_voice_end(websocket, imsg.voice_end)
+        else:
+            # Either empty oneof or a newer message type unknown to this client
+            _LOG.info(
+                "[%s] WS: Received unsupported or unknown IntegrationMessage: %s",
+                websocket.remote_address,
+                kind,
+            )
+
+    async def _on_remote_voice_begin(self, websocket, msg) -> None:
+        """Handle a RemoteVoiceBegin protobuf message (stub).
+
+        Logs key parameters. Future implementations can initialize
+        session-specific state here.
+        """
+        try:
+            cfg = msg.configuration
+            _LOG.debug(
+                "[%s] WS VoiceBegin: session_id=%s cfg(ch=%s sr=%s fmt=%s af=%s)",
+                websocket.remote_address,
+                msg.session_id,
+                getattr(cfg, "channels", None),
+                getattr(cfg, "sample_rate", None),
+                getattr(cfg, "sample_format", None),
+                getattr(cfg, "format", None),
+            )
+        except Exception:  # pragma: no cover - defensive logging only
+            _LOG.debug(
+                "[%s] WS VoiceBegin: session_id=%s",
+                websocket.remote_address,
+                getattr(msg, "session_id", None),
+            )
+
+    async def _on_remote_voice_data(self, websocket, msg) -> None:
+        """Handle a RemoteVoiceData protobuf message (stub)."""
+        sample_len = 0
+        try:
+            sample_len = len(msg.samples) if getattr(msg, "samples", None) else 0
+        except Exception:  # pragma: no cover - defensive logging only
+            sample_len = 0
+        _LOG.debug(
+            "[%s] WS VoiceData: session_id=%s bytes=%s",
+            websocket.remote_address,
+            getattr(msg, "session_id", None),
+            sample_len,
+        )
+
+    async def _on_remote_voice_end(self, websocket, msg) -> None:
+        """Handle a RemoteVoiceEnd protobuf message (stub)."""
+        _LOG.debug(
+            "[%s] WS VoiceEnd: session_id=%s",
+            websocket.remote_address,
+            getattr(msg, "session_id", None),
+        )
 
     async def _handle_ws_request_msg(
         self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None
