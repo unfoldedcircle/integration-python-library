@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Breaking Changes
+- A WebSocket disconnection no longer emits the `DISCONNECT` event, but the new `CLIENT_DISCONNECTED` event.
+
+### Added
+- New `CLIENT_CONNECTED` event is emitted when a WebSocket client connects.
+- WebSocket client identification in disconnect log statements.
+
 ---
 
 ## v0.3.2 - 2025-09-17
