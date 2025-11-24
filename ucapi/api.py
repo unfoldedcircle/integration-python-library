@@ -273,7 +273,7 @@ class IntegrationAPI:
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
         data_dump = json.dumps(data)
 
-        for websocket in self._clients:
+        for websocket in self._clients.copy():
             if _LOG.isEnabledFor(logging.DEBUG):
                 _LOG.debug(
                     "[%s] =>: %s", websocket.remote_address, filter_log_msg_data(data)
