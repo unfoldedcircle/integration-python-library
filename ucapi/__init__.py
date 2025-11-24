@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Integration driver library for Remote Two.
+Integration driver library for Remote Two/3.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
 :license: MPL-2.0, see LICENSE for more details.
@@ -11,6 +11,10 @@ import logging  # isort:skip
 
 from .api_definitions import (  # isort:skip # noqa: F401
     AbortDriverSetup,
+    AssistantError,
+    AssistantErrorCode,
+    AssistantEvent,
+    AssistantEventType,
     DeviceStates,
     DriverSetupRequest,
     Events,
@@ -28,6 +32,11 @@ from .api_definitions import (  # isort:skip # noqa: F401
 from .entity import Entity, EntityTypes  # isort:skip # noqa: F401
 from .entities import Entities  # isort:skip # noqa: F401
 from .api import IntegrationAPI  # isort:skip # noqa: F401
+from .voice_stream import (  # isort:skip # noqa: F401
+    AudioConfig,
+    VoiceSession,
+    VoiceStreamHandler,
+)
 
 # Entity types
 from .button import Button  # noqa: F401
@@ -38,6 +47,7 @@ from .media_player import MediaPlayer  # noqa: F401
 from .remote import Remote  # noqa: F401
 from .sensor import Sensor  # noqa: F401
 from .switch import Switch  # noqa: F401
+from .voice_assistant import VoiceAssistant  # noqa: F401
 
 try:
     from ._version import version as __version__

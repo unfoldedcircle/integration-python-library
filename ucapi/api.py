@@ -1,5 +1,5 @@
 """
-Integration driver API for Remote Two.
+Integration driver API for Remote Two/3.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
 :license: MPL-2.0, see LICENSE for more details.
@@ -12,6 +12,7 @@ import os
 import socket
 from asyncio import AbstractEventLoop
 from copy import deepcopy
+from dataclasses import asdict
 from typing import Any, Callable
 
 import websockets
@@ -28,12 +29,16 @@ from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 import ucapi.api_definitions as uc
 from ucapi.entities import Entities
 from ucapi.media_player import Attributes as MediaAttr
+from ucapi.voice_stream import AudioConfig, VoiceSession, VoiceStreamHandler
 
-# Protobuf IntegrationMessage support (optional at runtime)
-try:
-    from ucapi.proto import ucr_integration_voice_pb2 as voice_pb2
-except Exception:  # pragma: no cover - optional dependency at runtime
-    voice_pb2 = None  # type: ignore
+# Classes are dynamically created at runtime using the Google Protobuf builder pattern.
+# pylint: disable=no-name-in-module
+from .proto.ucr_integration_voice_pb2 import (
+    IntegrationMessage,
+    RemoteVoiceBegin,
+    RemoteVoiceData,
+    RemoteVoiceEnd,
+)
 
 try:
     from ._version import version as __version__
@@ -44,8 +49,9 @@ _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
 
 
+# pylint: disable=too-many-public-methods, too-many-lines
 class IntegrationAPI:
-    """Integration API to communicate with Remote Two."""
+    """Integration API to communicate with Remote Two/3."""
 
     def __init__(self, loop: AbstractEventLoop):
         """
@@ -68,6 +74,14 @@ class IntegrationAPI:
 
         self._available_entities = Entities("available", self._loop)
         self._configured_entities = Entities("configured", self._loop)
+
+        # Voice stream handler
+        self._voice_handler: VoiceStreamHandler | None = None
+        self._voice_sessions: dict[int, VoiceSession] = {}
+        # Track which websocket owns which voice session ids, to cleanup on disconnect
+        self._voice_ws_sessions: dict[Any, set[int]] = {}
+        # Owner mapping: session_id -> websocket to facilitate cleanup
+        self._voice_session_owner: dict[int, Any] = {}
 
         # Setup event loop
         asyncio.set_event_loop(self._loop)
@@ -205,6 +219,16 @@ class IntegrationAPI:
             )
 
         finally:
+            # Cleanup any active voice sessions associated with this websocket
+            try:
+                session_ids = self._voice_ws_sessions.pop(websocket, set())
+            except Exception:  # pylint: disable=W0718
+                session_ids = set()
+            for sid in list(session_ids):
+                session = self._voice_sessions.pop(sid, None)
+                if session:
+                    session.end()
+
             self._clients.remove(websocket)
             _LOG.info("[%s] WS: Client removed", websocket.remote_address)
             self._events.emit(uc.Events.CLIENT_DISCONNECTED)
@@ -368,23 +392,16 @@ class IntegrationAPI:
                 "[%s] <-: <binary %d bytes>", websocket.remote_address, len(data)
             )
 
-        if voice_pb2 is None:
-            _LOG.error(
-                "[%s] WS: Received binary data but protobuf module is not available",
-                websocket.remote_address,
-            )
-            return
-
         # Parse IntegrationMessage from bytes
         try:
-            imsg = voice_pb2.IntegrationMessage()
+            imsg = IntegrationMessage()
             imsg.ParseFromString(data)
-        except Exception as exc:
+        except Exception as ex:  # pylint: disable=W0718
             _LOG.error(
-                "[%s] WS: Failed to parse IntegrationMessage (%d bytes): %s",
+                "[%s] proto: Failed to parse IntegrationMessage (%d bytes): %s",
                 websocket.remote_address,
                 len(data),
-                exc,
+                ex,
             )
             return
 
@@ -398,56 +415,171 @@ class IntegrationAPI:
         else:
             # Either empty oneof or a newer message type unknown to this client
             _LOG.info(
-                "[%s] WS: Received unsupported or unknown IntegrationMessage: %s",
+                "[%s] proto: Received unsupported or unknown IntegrationMessage: %s",
                 websocket.remote_address,
                 kind,
             )
 
-    async def _on_remote_voice_begin(self, websocket, msg) -> None:
-        """Handle a RemoteVoiceBegin protobuf message (stub).
+    async def _on_remote_voice_begin(self, websocket, msg: RemoteVoiceBegin) -> None:
+        """Handle a RemoteVoiceBegin protobuf message.
 
-        Logs key parameters. Future implementations can initialize
-        session-specific state here.
+        Behavior:
+        - If no voice handler is registered: log a concise info line and ignore
+          the stream (drop subsequent data/end silently).
+        - If a handler is registered: create a VoiceSession and invoke the
+          handler in the background.
         """
-        try:
-            cfg = msg.configuration
-            _LOG.debug(
-                "[%s] WS VoiceBegin: session_id=%s cfg(ch=%s sr=%s fmt=%s af=%s)",
-                websocket.remote_address,
-                msg.session_id,
-                getattr(cfg, "channels", None),
-                getattr(cfg, "sample_rate", None),
-                getattr(cfg, "sample_format", None),
-                getattr(cfg, "format", None),
-            )
-        except Exception:  # pragma: no cover - defensive logging only
-            _LOG.debug(
-                "[%s] WS VoiceBegin: session_id=%s",
+        if self._voice_handler is None:
+            # Log once per stream and ignore further binary messages.
+            cfg = getattr(msg, "configuration", None)
+            _LOG.warning(
+                "[%s] proto VoiceBegin: session_id=%s cfg(ch=%s sr=%s fmt=%s af=%s) (no voice handler)",
                 websocket.remote_address,
                 getattr(msg, "session_id", None),
+                getattr(cfg, "channels", None) if cfg else None,
+                getattr(cfg, "sample_rate", None) if cfg else None,
+                getattr(cfg, "sample_format", None) if cfg else None,
+                getattr(cfg, "format", None) if cfg else None,
+            )
+            return
+
+        # Build AudioConfig from proto and create a session
+        cfg = getattr(msg, "configuration", None)
+        audio_cfg = AudioConfig(
+            channels=int(getattr(cfg, "channels", 1) or 1),
+            sample_rate=int(getattr(cfg, "sample_rate", 0) or 0),
+            sample_format=int(getattr(cfg, "sample_format", 0) or 0),
+            format=int(getattr(cfg, "format", 0) or 0),
+        )
+        session_id = int(getattr(msg, "session_id", 0) or 0)
+        session_id = 0  # FIXME(voice) until core is fixed
+        # TODO(voice) refactor VoiceSession to contain entity_id, create already at
+        #             voice_start WS message
+        session = VoiceSession(session_id, audio_cfg, loop=self._loop)
+        self._voice_sessions[session_id] = session
+        # Track ownership for cleanup on disconnect
+        owners = self._voice_ws_sessions.setdefault(websocket, set())
+        owners.add(session_id)
+        self._voice_session_owner[session_id] = websocket
+
+        if _LOG.isEnabledFor(logging.DEBUG):
+            _LOG.debug(
+                "[%s] proto VoiceBegin: session_id=%s cfg(ch=%s sr=%s fmt=%s af=%s)",
+                websocket.remote_address,
+                session.session_id,
+                session.config.channels,
+                session.config.sample_rate,
+                session.config.sample_format,
+                session.config.format,
             )
 
-    async def _on_remote_voice_data(self, websocket, msg) -> None:
-        """Handle a RemoteVoiceData protobuf message (stub)."""
-        sample_len = 0
+        # Invoke handler in the background so the WS loop is not blocked
+        self._loop.create_task(self._run_voice_handler(session))
+
+    async def _on_remote_voice_data(self, websocket, msg: RemoteVoiceData) -> None:
+        """Handle a RemoteVoiceData protobuf message.
+
+        If no voice handler is registered, this function returns immediately
+        without logging to avoid noise (as per default behavior).
+        """
+        if self._voice_handler is None:
+            # already logged in RemoteVoiceBegin
+            return
+
+        session_id = int(getattr(msg, "session_id", 0) or 0)
+        session_id = 0  # FIXME(voice) until core is fixed
+        session = self._voice_sessions.get(session_id)
+        if not session:
+            _LOG.error(
+                "[%s] proto VoiceData: no voice session for session_id=%s",
+                websocket.remote_address,
+                session_id,
+            )
+            return
+
+        samples = getattr(msg, "samples", b"") or b""
+        if samples:
+            try:
+                session.feed(bytes(samples))
+            except Exception as ex:  # pylint: disable=W0718
+                _LOG.error(
+                    "[%s] proto VoiceData: session %s processing error: %s",
+                    websocket.remote_address,
+                    session_id,
+                    ex,
+                )
+
+    async def _on_remote_voice_end(self, _websocket, msg: RemoteVoiceEnd) -> None:
+        """Handle a RemoteVoiceEnd protobuf message.
+
+        If no voice handler is registered, do nothing (default ignore behavior).
+        """
+        if self._voice_handler is None:
+            return
+        session_id = int(getattr(msg, "session_id", 0) or 0)
+        session_id = 0  # FIXME(voice) until core is fixed
+        session = self._voice_sessions.pop(session_id, None)
+        if session:
+            session.end()
+        # Cleanup ownership mappings
         try:
-            sample_len = len(msg.samples) if getattr(msg, "samples", None) else 0
-        except Exception:  # pragma: no cover - defensive logging only
-            sample_len = 0
-        _LOG.debug(
-            "[%s] WS VoiceData: session_id=%s bytes=%s",
-            websocket.remote_address,
-            getattr(msg, "session_id", None),
-            sample_len,
+            owner_ws = self._voice_session_owner.pop(session_id, None)
+            if owner_ws is not None:
+                owners = self._voice_ws_sessions.get(owner_ws)
+                if owners is not None:
+                    owners.discard(session_id)
+                    if not owners:
+                        # Keep dict tidy
+                        self._voice_ws_sessions.pop(owner_ws, None)
+        except Exception:  # pylint: disable=W0718
+            pass
+
+    def set_voice_stream_handler(self, handler: VoiceStreamHandler | None) -> None:
+        """Register or clear the voice stream handler.
+
+        Passing ``None`` clears the handler. When no handler is registered,
+        binary voice messages are ignored and only the initial begin is logged.
+        """
+        self._voice_handler = handler
+
+    async def broadcast_assistant_event(self, event: uc.AssistantEvent) -> None:
+        """Broadcast an assistant event to all connected WebSocket clients."""
+        await self._broadcast_ws_event(
+            uc.WsMsgEvents.ASSISTANT_EVENT,
+            asdict(event),
+            uc.EventCategory.ENTITY,
         )
 
-    async def _on_remote_voice_end(self, websocket, msg) -> None:
-        """Handle a RemoteVoiceEnd protobuf message (stub)."""
-        _LOG.debug(
-            "[%s] WS VoiceEnd: session_id=%s",
-            websocket.remote_address,
-            getattr(msg, "session_id", None),
+    async def send_assistant_event(self, websocket, event: uc.AssistantEvent) -> None:
+        """Send an assistant event to the given WebSocket client."""
+        await self._send_ws_event(
+            websocket,
+            uc.WsMsgEvents.ASSISTANT_EVENT,
+            asdict(event),
+            uc.EventCategory.ENTITY,
         )
+
+    async def _run_voice_handler(self, session: VoiceSession) -> None:
+        """Run the user-provided voice handler safely.
+
+        Accepts both sync and async callables. Ensures session cleanup on exit.
+        """
+        handler = self._voice_handler
+        if handler is None:
+            # Handler cleared after session start; just end the session
+            session.end()
+            return
+        try:
+            result = handler(session)
+            if asyncio.iscoroutine(result):
+                await result
+        except Exception:  # pylint: disable=W0718
+            _LOG.exception("Voice handler failed for session %s", session.session_id)
+        finally:
+            # Ensure iterator is unblocked and session is cleaned up
+            if not session.closed:
+                session.end()
+            self._voice_sessions.pop(session.session_id, None)
 
     async def _handle_ws_request_msg(
         self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None
@@ -742,7 +874,7 @@ class IntegrationAPI:
         self, websocket, req_id: int, status_code: uc.StatusCodes = uc.StatusCodes.OK
     ) -> None:
         """
-        Acknowledge a command from Remote Two.
+        Acknowledge a command from Remote Two/3.
 
         :param websocket: client connection
         :param req_id: request message identifier to acknowledge
@@ -755,7 +887,7 @@ class IntegrationAPI:
 
     async def driver_setup_progress(self, websocket) -> None:
         """
-        Send a driver setup progress event to Remote Two.
+        Send a driver setup progress event to Remote Two/3.
 
         :param websocket: client connection
 
@@ -823,7 +955,7 @@ class IntegrationAPI:
         )
 
     async def driver_setup_complete(self, websocket) -> None:
-        """Send a driver setup complete event to Remote Two."""
+        """Send a driver setup complete event to Remote Two/3."""
         data = {"event_type": "STOP", "state": "OK"}
 
         await self._send_ws_event(
@@ -831,7 +963,7 @@ class IntegrationAPI:
         )
 
     async def driver_setup_error(self, websocket, error="OTHER") -> None:
-        """Send a driver setup error event to Remote Two."""
+        """Send a driver setup error event to Remote Two/3."""
         data = {"event_type": "STOP", "state": "ERROR", "error": error}
 
         await self._send_ws_event(

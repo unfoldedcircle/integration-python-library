@@ -1,0 +1,18 @@
+{
+  "driver_id": "voice_test",
+  "version": "0.0.1",
+  "min_core_api": "0.20.0",
+  "name": { "en": "Voice test" },
+  "icon": "uc:integration",
+  "description": {
+    "en": "Minimal Python integration driver example for voice commands."
+  },
+  "port": 9084,
+  "developer": {
+    "name": "Unfolded Circle ApS",
+    "email": "hello@unfoldedcircle.com",
+    "url": "https://www.unfoldedcircle.com"
+  },
+  "home_page": "https://www.unfoldedcircle.com",
+  "release_date": "2025-12-11"
+}

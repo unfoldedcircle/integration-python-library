@@ -38,7 +38,7 @@ async def handle_driver_setup(
     """
     Start driver setup.
 
-    Initiated by Remote Two to set up the driver.
+    Initiated by Remote Two/3 to set up the driver.
 
     :param msg: value(s) of input fields in the first setup screen.
     :return: the setup action on how to continue
