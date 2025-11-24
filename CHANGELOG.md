@@ -9,14 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+---
+
+## v0.4.0 - 2025-11-24
 ### Breaking Changes
-- A WebSocket disconnection no longer emits the `DISCONNECT` event, but the new `CLIENT_DISCONNECTED` event.
+- A WebSocket disconnection no longer emits the `DISCONNECT` event, but the new `CLIENT_DISCONNECTED` event ([#35](https://github.com/unfoldedcircle/integration-python-library/pull/35)).
 
 ### Added
-- New `CLIENT_CONNECTED` event is emitted when a WebSocket client connects.
+- New `CLIENT_CONNECTED` event is emitted when a WebSocket client connects ([#35](https://github.com/unfoldedcircle/integration-python-library/pull/35)).
 - WebSocket client identification in disconnect log statements.
 
----
+### Fixed
+- Null reference exception in log filter ([#33](https://github.com/unfoldedcircle/integration-python-library/pull/33)).
+- Set changed size during iteration for WS broadcast ([#36](https://github.com/unfoldedcircle/integration-python-library/pull/36)).
 
 ## v0.3.2 - 2025-09-17
 ### Changed
