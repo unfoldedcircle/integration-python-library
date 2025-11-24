@@ -20,14 +20,18 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
 
       - name: Install pip
         run: |

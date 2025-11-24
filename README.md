@@ -20,7 +20,7 @@ Not yet supported:
 - Token based authentication
 
 Requirements:
-- Python 3.10 or newer
+- Python 3.11 or newer
 
 ## Installation
 

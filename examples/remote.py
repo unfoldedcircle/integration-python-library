@@ -20,7 +20,7 @@ from ucapi.ui import (
     create_ui_text,
 )
 
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 api = ucapi.IntegrationAPI(loop)
 
 # Simple commands which are supported by this example remote-entity
