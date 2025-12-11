@@ -7,14 +7,16 @@ from typing import Any
 
 import ucapi
 from ucapi import AssistantEvent, AssistantEventType, VoiceAssistant
-from ucapi.api_definitions import AssistantTextResponse, AssistantSttResponse
+from ucapi.api_definitions import AssistantSttResponse, AssistantTextResponse
+from ucapi.voice_assistant import Attributes as VAAttr
 from ucapi.voice_assistant import (
-    Commands as VACommands,
-    Features as VAFeatures,
-    Attributes as VAAttr,
-    VoiceAssistantEntityOptions,
     AudioConfiguration,
+)
+from ucapi.voice_assistant import Commands as VACommands
+from ucapi.voice_assistant import Features as VAFeatures
+from ucapi.voice_assistant import (
     SampleFormat,
+    VoiceAssistantEntityOptions,
 )
 
 loop = asyncio.new_event_loop()
