@@ -53,7 +53,7 @@ async def on_voice_cmd(
     # HACK until core is fixed
     global session_id
 
-    print(f"Got {entity.id} command request: {cmd_id}")
+    print(f"Got {entity.id} command request: {cmd_id} {params}")
     if params is None:
         return ucapi.StatusCodes.BAD_REQUEST
 
@@ -77,7 +77,7 @@ async def on_voice_cmd(
 async def on_voice_session(session):
     print(
         f"Voice stream started: session={session.session_id}, "
-        f"{session.config.channels}ch @ {session.config.sample_rate} Hz"
+        f"{session.config.channels}ch @ {session.config.sample_rate} Hz {session.config.sample_format.value}"
     )
     # HACK until core is fixed
     global session_id
@@ -91,7 +91,7 @@ async def on_voice_session(session):
 
     event = AssistantEvent(
         type=AssistantEventType.STT_RESPONSE,
-        entity_id="va_main",
+        entity_id=session.entity_id,
         session_id=session_id,
         data=AssistantSttResponse(
             text="I'm just a demo and I don't know what you said."
@@ -102,7 +102,7 @@ async def on_voice_session(session):
     await sleep(1)
     event = AssistantEvent(
         type=AssistantEventType.TEXT_RESPONSE,
-        entity_id="va_main",
+        entity_id=session.entity_id,
         session_id=session_id,
         data=AssistantTextResponse(
             success=True, text=f"You have sent {total} bytes of audio data"
@@ -113,7 +113,7 @@ async def on_voice_session(session):
     await sleep(1)
     event = AssistantEvent(
         type=AssistantEventType.FINISHED,
-        entity_id="va_main",
+        entity_id=session.entity_id,
         session_id=session_id,
     )
     await api.broadcast_assistant_event(event)

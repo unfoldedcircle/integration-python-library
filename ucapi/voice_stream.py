@@ -13,8 +13,9 @@ from __future__ import annotations
 import asyncio
 import logging
 from asyncio import AbstractEventLoop
-from dataclasses import dataclass
 from typing import AsyncIterator, Awaitable, Callable, Optional
+
+from ucapi.voice_assistant import AudioConfiguration
 
 _LOG = logging.getLogger(__name__)
 
@@ -25,19 +26,6 @@ VoiceStreamHandler = Callable[["VoiceSession"], Optional[Awaitable[None]]]
 Accepts a VoiceSession and may be sync or async. The handler is invoked once per voice
 stream session.
 """
-
-
-@dataclass(slots=True)
-class AudioConfig:
-    """Lightweight audio configuration mirrored from the protobuf message.
-
-    Values are kept as their numeric enum representations from the proto for now.
-    """
-
-    channels: int
-    sample_rate: int
-    sample_format: int
-    format: int
 
 
 class VoiceSession:
@@ -51,13 +39,15 @@ class VoiceSession:
     def __init__(
         self,
         session_id: int,
-        config: AudioConfig,
+        entity_id: str,
+        config: AudioConfiguration,
         *,
         loop: AbstractEventLoop,
         max_queue: int = 32,
     ) -> None:
         """Create a voice session instance."""
         self.session_id = session_id
+        self.entity_id = entity_id
         self.config = config
         self._loop = loop
         self._q: asyncio.Queue[bytes | None] = asyncio.Queue(maxsize=max_queue)

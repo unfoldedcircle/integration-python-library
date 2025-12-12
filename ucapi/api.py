@@ -26,10 +26,10 @@ from websockets.exceptions import ConnectionClosedOK
 from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
-import ucapi.api_definitions as uc
-from ucapi.entities import Entities
-from ucapi.media_player import Attributes as MediaAttr
-from ucapi.voice_stream import AudioConfig, VoiceSession, VoiceStreamHandler
+from . import api_definitions as uc
+from .entities import Entities
+from .entity import EntityTypes
+from .media_player import Attributes as MediaAttr
 
 # Classes are dynamically created at runtime using the Google Protobuf builder pattern.
 # pylint: disable=no-name-in-module
@@ -39,6 +39,10 @@ from .proto.ucr_integration_voice_pb2 import (
     RemoteVoiceData,
     RemoteVoiceEnd,
 )
+from .voice_assistant import AudioConfiguration
+from .voice_assistant import Commands as VaCommands
+from .voice_assistant import SampleFormat
+from .voice_stream import VoiceSession, VoiceStreamHandler
 
 try:
     from ._version import version as __version__
@@ -443,20 +447,25 @@ class IntegrationAPI:
             )
             return
 
-        # Build AudioConfig from proto and create a session
-        cfg = getattr(msg, "configuration", None)
-        audio_cfg = AudioConfig(
-            channels=int(getattr(cfg, "channels", 1) or 1),
-            sample_rate=int(getattr(cfg, "sample_rate", 0) or 0),
-            sample_format=int(getattr(cfg, "sample_format", 0) or 0),
-            format=int(getattr(cfg, "format", 0) or 0),
-        )
         session_id = int(getattr(msg, "session_id", 0) or 0)
         session_id = 0  # FIXME(voice) until core is fixed
-        # TODO(voice) refactor VoiceSession to contain entity_id, create already at
-        #             voice_start WS message
-        session = VoiceSession(session_id, audio_cfg, loop=self._loop)
-        self._voice_sessions[session_id] = session
+        session = self._voice_sessions.get(session_id)
+        if not session:
+            _LOG.error(
+                "[%s] proto VoiceBegin: no voice session for session_id=%s",
+                websocket.remote_address,
+                session_id,
+            )
+            return
+
+        # TODO(voice) verify AudioConfiguration in session from voice_start command?
+        # cfg = getattr(msg, "configuration", None)
+        # audio_cfg = AudioConfiguration(
+        #     channels=int(getattr(cfg, "channels", 1) or 1),
+        #     sample_rate=int(getattr(cfg, "sample_rate", 0) or 0),
+        #     sample_format=int(getattr(cfg, "sample_format", 0) or 0), # FIXME convert
+        # )
+
         # Track ownership for cleanup on disconnect
         owners = self._voice_ws_sessions.setdefault(websocket, set())
         owners.add(session_id)
@@ -464,13 +473,12 @@ class IntegrationAPI:
 
         if _LOG.isEnabledFor(logging.DEBUG):
             _LOG.debug(
-                "[%s] proto VoiceBegin: session_id=%s cfg(ch=%s sr=%s fmt=%s af=%s)",
+                "[%s] proto VoiceBegin: session_id=%s cfg(ch=%s sr=%s fmt=%s)",
                 websocket.remote_address,
                 session.session_id,
                 session.config.channels,
                 session.config.sample_rate,
                 session.config.sample_format,
-                session.config.format,
             )
 
         # Invoke handler in the background so the WS loop is not blocked
@@ -758,6 +766,28 @@ class IntegrationAPI:
             )
             await self.acknowledge_command(websocket, req_id, uc.StatusCodes.NOT_FOUND)
             return
+
+        if (
+            entity.entity_type == EntityTypes.VOICE_ASSISTANT
+            and cmd_id == VaCommands.VOICE_START
+            and "params" in msg_data
+        ):
+            params = msg_data["params"]
+            session_id = params.get("session_id")
+            session_id = 0  # FIXME(voice) until core is fixed
+            cfg = params.get("audio_cfg")
+            audio_cfg = (
+                AudioConfiguration(
+                    channels=cfg.get("channels", 1),
+                    sample_rate=cfg.get("sample_rate", 16000),
+                    sample_format=cfg.get("sample_format", SampleFormat.I16),
+                )
+                if cfg
+                else AudioConfiguration()
+            )
+
+            session = VoiceSession(session_id, entity_id, audio_cfg, loop=self._loop)
+            self._voice_sessions[session_id] = session
 
         result = await entity.command(
             cmd_id, msg_data["params"] if "params" in msg_data else None

@@ -79,19 +79,19 @@ class Options(str, Enum):
 class SampleFormat(str, Enum):
     """Audio format specification."""
 
-    I16 = "i16"
+    I16 = "I16"
     """Signed 16 bit."""
 
-    I32 = "i32"
+    I32 = "I32"
     """Signed 32 bit."""
 
-    U16 = "u16"
+    U16 = "U16"
     """Unsigned 16 bit."""
 
-    U32 = "u32"
+    U32 = "U32"
     """Unsigned 32 bit."""
 
-    F32 = "f32"
+    F32 = "F32"
     """Float 32 bit."""
 
 

@@ -33,7 +33,6 @@ from .entity import Entity, EntityTypes  # isort:skip # noqa: F401
 from .entities import Entities  # isort:skip # noqa: F401
 from .api import IntegrationAPI  # isort:skip # noqa: F401
 from .voice_stream import (  # isort:skip # noqa: F401
-    AudioConfig,
     VoiceSession,
     VoiceStreamHandler,
 )
