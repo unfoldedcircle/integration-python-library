@@ -46,7 +46,7 @@ from .voice_assistant import (
     AudioConfiguration,
 )
 from .voice_assistant import Commands as VaCommands
-from .voice_stream import VoiceSession, VoiceStreamHandler
+from .voice_stream import VoiceEndReason, VoiceSession, VoiceStreamHandler
 
 try:
     from ._version import version as __version__
@@ -559,7 +559,7 @@ class IntegrationAPI:
         # End and remove session
         session = self._voice_sessions.pop(session_id, None)
         if session is not None and not session.closed:
-            session.end()
+            session.end()  # normal close
 
         # Remove ownership mappings
         try:
@@ -609,18 +609,20 @@ class IntegrationAPI:
         handler = self._voice_handler
         if handler is None:
             # Handler cleared after session start; just end the session
-            session.end()
+            session.end(VoiceEndReason.LOCAL)
             return
         try:
             result = handler(session)
             if asyncio.iscoroutine(result):
                 await result
-        except Exception:  # pylint: disable=W0718
-            _LOG.exception("Voice handler failed for session %s", session.session_id)
-        finally:
-            # Ensure iterator is unblocked and session is cleaned up
             if not session.closed:
                 session.end()
+        except Exception as ex:  # pylint: disable=W0718
+            _LOG.exception("Voice handler failed for session %s", session.session_id)
+            if not session.closed:
+                session.end(VoiceEndReason.ERROR, ex)
+        finally:
+            # Ensure iterator is unblocked and session is cleaned up
             await self._cleanup_voice_session(session.session_id)
 
     def _schedule_voice_timeout(self, session_id: int) -> None:
@@ -671,7 +673,7 @@ class IntegrationAPI:
                 )
 
         # End and cleanup
-        session.end()
+        session.end(VoiceEndReason.TIMEOUT)
         await self._cleanup_voice_session(session_id)
 
     async def _handle_ws_request_msg(

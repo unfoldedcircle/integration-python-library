@@ -6,7 +6,13 @@ from asyncio import sleep
 from typing import Any
 
 import ucapi
-from ucapi import AssistantEvent, AssistantEventType, VoiceAssistant
+from ucapi import (
+    AssistantError,
+    AssistantErrorCode,
+    AssistantEvent,
+    AssistantEventType,
+    VoiceAssistant,
+)
 from ucapi.api_definitions import AssistantSttResponse, AssistantTextResponse
 from ucapi.voice_assistant import Attributes as VAAttr
 from ucapi.voice_assistant import (
@@ -18,6 +24,7 @@ from ucapi.voice_assistant import (
     SampleFormat,
     VoiceAssistantEntityOptions,
 )
+from ucapi.voice_stream import VoiceEndReason, VoiceSessionClosed
 
 loop = asyncio.new_event_loop()
 api = ucapi.IntegrationAPI(loop)
@@ -83,34 +90,57 @@ async def on_voice_session(session):
     global session_id
 
     total = 0
-    async for frame in session:  # frame is bytes
-        total += len(frame)
-        # feed frame into your voice assistant / LLM here
-        print(f"Got {len(frame)} bytes of audio data")
-    print(f"Voice stream ended: session={session.session_id}, bytes={total}")
+    try:
+        async for frame in session:  # frame is bytes
+            total += len(frame)
+            # feed frame into your voice assistant / LLM here
+            print(f"Got {len(frame)} bytes of audio data")
+        print(f"Voice stream ended: session={session.session_id}, bytes={total}")
 
-    event = AssistantEvent(
-        type=AssistantEventType.STT_RESPONSE,
-        entity_id=session.entity_id,
-        session_id=session_id,
-        data=AssistantSttResponse(
-            text="I'm just a demo and I don't know what you said."
-        ),
-    )
-    await api.broadcast_assistant_event(event)
+        event = AssistantEvent(
+            type=AssistantEventType.STT_RESPONSE,
+            entity_id=session.entity_id,
+            session_id=session_id,
+            data=AssistantSttResponse(
+                text="I'm just a demo and I don't know what you said."
+            ),
+        )
+        await api.broadcast_assistant_event(event)
 
-    await sleep(1)
-    event = AssistantEvent(
-        type=AssistantEventType.TEXT_RESPONSE,
-        entity_id=session.entity_id,
-        session_id=session_id,
-        data=AssistantTextResponse(
-            success=True, text=f"You have sent {total} bytes of audio data"
-        ),
-    )
-    await api.broadcast_assistant_event(event)
+        await sleep(1)
+        event = AssistantEvent(
+            type=AssistantEventType.TEXT_RESPONSE,
+            entity_id=session.entity_id,
+            session_id=session_id,
+            data=AssistantTextResponse(
+                success=True, text=f"You have sent {total} bytes of audio data"
+            ),
+        )
+        await api.broadcast_assistant_event(event)
 
-    await sleep(1)
+        await sleep(1)
+    except VoiceSessionClosed as ex:
+        print(
+            f"Voice stream session {session.session_id} closed (bytes={total})! Reason: {ex.reason}, exception: {ex.error}"
+        )
+        if ex.reason == VoiceEndReason.REMOTE:
+            return  # Remote disconnected
+        event = AssistantEvent(
+            type=AssistantEventType.ERROR,
+            entity_id=session.entity_id,
+            session_id=session_id,
+            data=AssistantError(
+                code=(
+                    AssistantErrorCode.TIMEOUT
+                    if ex.reason == VoiceEndReason.TIMEOUT
+                    else AssistantErrorCode.UNEXPECTED_ERROR
+                ),
+                message=f"Reason: {ex.reason}, exception: {ex.error}",
+            ),
+        )
+        await api.broadcast_assistant_event(event)
+
+    # final event
     event = AssistantEvent(
         type=AssistantEventType.FINISHED,
         entity_id=session.entity_id,

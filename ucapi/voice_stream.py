@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from asyncio import AbstractEventLoop
+from enum import Enum, auto
 from typing import AsyncIterator, Awaitable, Callable, Optional
 
 from ucapi.voice_assistant import AudioConfiguration
@@ -26,6 +27,53 @@ VoiceStreamHandler = Callable[["VoiceSession"], Optional[Awaitable[None]]]
 Accepts a VoiceSession and may be sync or async. The handler is invoked once per voice
 stream session.
 """
+
+
+class VoiceEndReason(Enum):
+    """Reasons for ending a voice session."""
+
+    NORMAL = auto()
+    """Normal session end."""
+    TIMEOUT = auto()
+    """Closed due to timeout."""
+    REMOTE = auto()
+    """Closed remotely, for example by the client disconnecting."""
+    LOCAL = auto()
+    """Closed locally in integration, for example by a new session request."""
+    ERROR = auto()
+    """Closed due to an error."""
+
+
+class VoiceSessionClosed(Exception):
+    """Base class for voice session-related exceptions."""
+
+    def __init__(self, reason: VoiceEndReason, error: Exception | None = None):
+        """Create a voice session-related exception instance."""
+        super().__init__(str(reason))
+        self.reason = reason
+        self.error = error
+
+
+class VoiceSessionTimeout(VoiceSessionClosed):
+    """Raised when a voice session times out."""
+
+
+class VoiceSessionRemoteEnd(VoiceSessionClosed):
+    """Raised when a voice session ends remotely."""
+
+
+class VoiceSessionLocalEnd(VoiceSessionClosed):
+    """Raised when a voice session ends locally."""
+
+
+class VoiceSessionError(VoiceSessionClosed):
+    """Raised when a voice session ends due to an error."""
+
+
+class _EndSignal:
+    def __init__(self, reason: VoiceEndReason, error: Exception | None = None):
+        self.reason = reason
+        self.error = error
 
 
 class VoiceSession:
@@ -50,9 +98,11 @@ class VoiceSession:
         self.entity_id = entity_id
         self.config = config
         self._loop = loop
-        self._q: asyncio.Queue[bytes | None] = asyncio.Queue(maxsize=max_queue)
+        self._q: asyncio.Queue[bytes | _EndSignal] = asyncio.Queue(maxsize=max_queue)
         self._closed = False
         self._drops_logged = 0
+        self.ended_by: VoiceEndReason | None = None
+        self.end_error: Exception | None = None
 
     def __aiter__(self) -> AsyncIterator[bytes]:
         """Return an async iterator over audio frames."""
@@ -68,13 +118,27 @@ class VoiceSession:
 
         :yield: Bytes : The next frame of data retrieved from the queue.
         :rtype: AsyncIterator[bytes]
+        :raises VoiceSessionTimeout: If the session times out.
+        :raises VoiceSessionRemoteEnd: If the session ends remotely.
+        :raises VoiceSessionLocalEnd: If the session ends locally.
+        :raises VoiceSessionError: If the session ends due to an error.
         """
         while True:
             item = await self._q.get()
-            if item is None:
+            if isinstance(item, _EndSignal):
                 self._closed = True
-                return
-            yield item
+                self.ended_by = item.reason
+                self.end_error = item.error
+                if item.reason is VoiceEndReason.NORMAL:
+                    return  # StopAsyncIteration
+                if item.reason is VoiceEndReason.TIMEOUT:
+                    raise VoiceSessionTimeout(item.reason)
+                if item.reason is VoiceEndReason.REMOTE:
+                    raise VoiceSessionRemoteEnd(item.reason)
+                if item.reason is VoiceEndReason.LOCAL:
+                    raise VoiceSessionLocalEnd(item.reason)
+                raise VoiceSessionError(item.reason, item.error)
+            yield item  # bytes
 
     def feed(self, chunk: bytes) -> None:
         """Feed an audio chunk into the session.
@@ -85,6 +149,8 @@ class VoiceSession:
         :param chunk: Audio data bytes.
         """
         try:
+            if self._closed:
+                return
             self._q.put_nowait(chunk)
         except asyncio.QueueFull:
             # Drop newest if consumer lags; throttle debug logging.
@@ -95,23 +161,31 @@ class VoiceSession:
                 )
             self._drops_logged += 1
 
-    def end(self) -> None:
+    def end(
+        self,
+        reason: VoiceEndReason = VoiceEndReason.NORMAL,
+        error: Exception | None = None,
+    ) -> None:
         """
         Signal the end of the voice session.
 
-        Enqueues a sentinel (None) to stop the consumer iterator.
+        Enqueues a sentinel (_EndSignal) to stop the consumer iterator.
         If the queue is full, attempts to make space for the sentinel.
         """
-        if not self._closed:
+        if self._closed:
+            return
+        try:
+            self._q.put_nowait(_EndSignal(reason, error))
+        except asyncio.QueueFull:
+            # Clear one and try to enqueue sentinel
             try:
-                self._q.put_nowait(None)
-            except asyncio.QueueFull:
-                # Clear one and try to enqueue sentinel
-                try:
-                    _ = self._q.get_nowait()
-                    self._q.put_nowait(None)
-                except Exception:  # pylint: disable=W0718
-                    self._closed = True
+                _ = self._q.get_nowait()
+                self._q.put_nowait(_EndSignal(reason, error))
+            except Exception:  # pylint: disable=W0718
+                # _should_ not happen, but just in case
+                pass
+        finally:
+            self._closed = True
 
     @property
     def closed(self) -> bool:
