@@ -873,7 +873,14 @@ class IntegrationAPI:
                 else AudioConfiguration()
             )
 
-            session = VoiceSession(session_id, entity_id, audio_cfg, loop=self._loop)
+            session = VoiceSession(
+                session_id,
+                entity_id,
+                audio_cfg,
+                api=self,
+                websocket=websocket,
+                loop=self._loop,
+            )
             self._voice_sessions[session_id] = session
             # Start timeout immediately on session creation
             self._schedule_voice_timeout(session_id)

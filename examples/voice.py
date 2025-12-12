@@ -105,7 +105,7 @@ async def on_voice_session(session):
                 text="I'm just a demo and I don't know what you said."
             ),
         )
-        await api.broadcast_assistant_event(event)
+        await session.send_event(event)
 
         await sleep(1)
         event = AssistantEvent(
@@ -116,7 +116,7 @@ async def on_voice_session(session):
                 success=True, text=f"You have sent {total} bytes of audio data"
             ),
         )
-        await api.broadcast_assistant_event(event)
+        await session.send_event(event)
 
         await sleep(1)
     except VoiceSessionClosed as ex:
@@ -138,7 +138,7 @@ async def on_voice_session(session):
                 message=f"Reason: {ex.reason}, exception: {ex.error}",
             ),
         )
-        await api.broadcast_assistant_event(event)
+        await session.send_event(event)
 
     # final event
     event = AssistantEvent(
@@ -146,7 +146,7 @@ async def on_voice_session(session):
         entity_id=session.entity_id,
         session_id=session_id,
     )
-    await api.broadcast_assistant_event(event)
+    await session.send_event(event)
 
 
 if __name__ == "__main__":

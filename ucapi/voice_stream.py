@@ -16,7 +16,8 @@ from asyncio import AbstractEventLoop
 from enum import Enum, auto
 from typing import AsyncIterator, Awaitable, Callable, Optional
 
-from ucapi.voice_assistant import AudioConfiguration
+from .api_definitions import AssistantEvent
+from .voice_assistant import AudioConfiguration
 
 _LOG = logging.getLogger(__name__)
 
@@ -90,6 +91,8 @@ class VoiceSession:
         entity_id: str,
         config: AudioConfiguration,
         *,
+        api,
+        websocket,
         loop: AbstractEventLoop,
         max_queue: int = 32,
     ) -> None:
@@ -97,16 +100,22 @@ class VoiceSession:
         self.session_id = session_id
         self.entity_id = entity_id
         self.config = config
+        self.ended_by: VoiceEndReason | None = None
+        self.end_error: Exception | None = None
+        self._api = api
+        self._websocket = websocket
         self._loop = loop
         self._q: asyncio.Queue[bytes | _EndSignal] = asyncio.Queue(maxsize=max_queue)
         self._closed = False
         self._drops_logged = 0
-        self.ended_by: VoiceEndReason | None = None
-        self.end_error: Exception | None = None
 
     def __aiter__(self) -> AsyncIterator[bytes]:
         """Return an async iterator over audio frames."""
         return self.frames()
+
+    async def send_event(self, event: AssistantEvent):
+        """Send an assistant event to the session initiator client."""
+        await self._api.send_assistant_event(self._websocket, event)
 
     async def frames(self) -> AsyncIterator[bytes]:
         """
