@@ -239,7 +239,7 @@ class IntegrationAPI:
                 session_ids = set()
             for sid in list(session_ids):
                 try:
-                    await self._cleanup_voice_session(sid)
+                    await self._cleanup_voice_session(sid, VoiceEndReason.REMOTE)
                 except Exception:  # pylint: disable=W0718
                     _LOG.exception(
                         "[%s] WS: Error during voice session cleanup for %s",
@@ -543,7 +543,9 @@ class IntegrationAPI:
         session_id = 0  # FIXME(voice) until core is fixed
         await self._cleanup_voice_session(session_id)
 
-    async def _cleanup_voice_session(self, session_id: int) -> None:
+    async def _cleanup_voice_session(
+        self, session_id: int, end_reason: VoiceEndReason = VoiceEndReason.NORMAL
+    ) -> None:
         """Cleanup internal state for a voice session.
 
         - Cancel and remove any pending timeout task for the session.
@@ -559,7 +561,7 @@ class IntegrationAPI:
         # End and remove session
         session = self._voice_sessions.pop(session_id, None)
         if session is not None and not session.closed:
-            session.end()  # normal close
+            session.end(end_reason)
 
         # Remove ownership mappings
         try:
@@ -615,8 +617,6 @@ class IntegrationAPI:
             result = handler(session)
             if asyncio.iscoroutine(result):
                 await result
-            if not session.closed:
-                session.end()
         except Exception as ex:  # pylint: disable=W0718
             _LOG.exception("Voice handler failed for session %s", session.session_id)
             if not session.closed:
