@@ -90,6 +90,11 @@ class IntegrationAPI:
         self._voice_ws_sessions: dict[Any, set[int]] = {}
         # Owner mapping: session_id -> websocket to facilitate cleanup
         self._voice_session_owner: dict[int, Any] = {}
+        # Voice session timeout management (seconds)
+        self._voice_session_timeout: int = 30
+        self._voice_session_timeouts: dict[int, asyncio.Task] = {}
+        # Track handler tasks per session (to avoid double-start and for observability)
+        self._voice_handler_tasks: dict[int, asyncio.Task] = {}
 
         # Setup event loop
         asyncio.set_event_loop(self._loop)
@@ -233,9 +238,14 @@ class IntegrationAPI:
             except Exception:  # pylint: disable=W0718
                 session_ids = set()
             for sid in list(session_ids):
-                session = self._voice_sessions.pop(sid, None)
-                if session:
-                    session.end()
+                try:
+                    await self._cleanup_voice_session(sid)
+                except Exception:  # pylint: disable=W0718
+                    _LOG.exception(
+                        "[%s] WS: Error during voice session cleanup for %s",
+                        websocket.remote_address,
+                        sid,
+                    )
 
             self._clients.remove(websocket)
             _LOG.info("[%s] WS: Client removed", websocket.remote_address)
@@ -486,7 +496,8 @@ class IntegrationAPI:
             )
 
         # Invoke handler in the background so the WS loop is not blocked
-        self._loop.create_task(self._run_voice_handler(session))
+        task = self._loop.create_task(self._run_voice_handler(session))
+        self._voice_handler_tasks[session.session_id] = task
 
     async def _on_remote_voice_data(self, websocket, msg: RemoteVoiceData) -> None:
         """Handle a RemoteVoiceData protobuf message.
@@ -530,10 +541,27 @@ class IntegrationAPI:
             return
         session_id = int(getattr(msg, "session_id", 0) or 0)
         session_id = 0  # FIXME(voice) until core is fixed
+        await self._cleanup_voice_session(session_id)
+
+    async def _cleanup_voice_session(self, session_id: int) -> None:
+        """Cleanup internal state for a voice session.
+
+        - Cancel and remove any pending timeout task for the session.
+        - End the session iterator if still open.
+        - Remove bookkeeping: _voice_sessions, _voice_session_owner, _voice_ws_sessions.
+        - Forget handler task reference (do not cancel it; handler should exit on end()).
+        """
+        # Cancel timeout task if present
+        t = self._voice_session_timeouts.pop(session_id, None)
+        if t is not None and not t.done():
+            t.cancel()
+
+        # End and remove session
         session = self._voice_sessions.pop(session_id, None)
-        if session:
+        if session is not None and not session.closed:
             session.end()
-        # Cleanup ownership mappings
+
+        # Remove ownership mappings
         try:
             owner_ws = self._voice_session_owner.pop(session_id, None)
             if owner_ws is not None:
@@ -541,10 +569,12 @@ class IntegrationAPI:
                 if owners is not None:
                     owners.discard(session_id)
                     if not owners:
-                        # Keep dict tidy
                         self._voice_ws_sessions.pop(owner_ws, None)
         except Exception:  # pylint: disable=W0718
             pass
+
+        # Drop handler task reference (don't cancel; allow graceful finish)
+        self._voice_handler_tasks.pop(session_id, None)
 
     def set_voice_stream_handler(self, handler: VoiceStreamHandler | None) -> None:
         """Register or clear the voice stream handler.
@@ -591,7 +621,58 @@ class IntegrationAPI:
             # Ensure iterator is unblocked and session is cleaned up
             if not session.closed:
                 session.end()
-            self._voice_sessions.pop(session.session_id, None)
+            await self._cleanup_voice_session(session.session_id)
+
+    def _schedule_voice_timeout(self, session_id: int) -> None:
+        """Schedule the timeout task for a voice session.
+
+        Starts counting immediately at creation time. When the timeout expires and the
+        session is still active, the handler is notified (invoked) if not already
+        started, the session is ended, and cleanup is performed.
+        """
+        # Cancel pre-existing task if any (defensive)
+        existing = self._voice_session_timeouts.pop(session_id, None)
+        if existing is not None and not existing.done():
+            existing.cancel()
+
+        task = self._loop.create_task(self._voice_session_timeout_task(session_id))
+        self._voice_session_timeouts[session_id] = task
+
+    async def _voice_session_timeout_task(self, session_id: int) -> None:
+        """Timeout watchdog for a voice session."""
+        try:
+            await asyncio.sleep(self._voice_session_timeout)
+        except asyncio.CancelledError:
+            return
+
+        # If still active after timeout; take action
+        session = self._voice_sessions.get(session_id)
+        if session is None:
+            return
+
+        _LOG.warning(
+            "Voice session %s timed out after %ss",
+            session_id,
+            self._voice_session_timeout,
+        )
+
+        # If handler not started yet (e.g., no VoiceBegin received), notify it now
+        if (
+            session_id not in self._voice_handler_tasks
+            and self._voice_handler is not None
+        ):
+            try:
+                task = self._loop.create_task(self._run_voice_handler(session))
+                self._voice_handler_tasks[session_id] = task
+            except Exception:  # pylint: disable=W0718
+                _LOG.exception(
+                    "Failed to start voice handler on timeout for session %s",
+                    session_id,
+                )
+
+        # End and cleanup
+        session.end()
+        await self._cleanup_voice_session(session_id)
 
     async def _handle_ws_request_msg(
         self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None
@@ -792,6 +873,8 @@ class IntegrationAPI:
 
             session = VoiceSession(session_id, entity_id, audio_cfg, loop=self._loop)
             self._voice_sessions[session_id] = session
+            # Start timeout immediately on session creation
+            self._schedule_voice_timeout(session_id)
 
         result = await entity.command(
             cmd_id, msg_data["params"] if "params" in msg_data else None
