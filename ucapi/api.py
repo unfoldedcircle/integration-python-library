@@ -39,9 +39,13 @@ from .proto.ucr_integration_voice_pb2 import (
     RemoteVoiceData,
     RemoteVoiceEnd,
 )
-from .voice_assistant import AudioConfiguration
+from .voice_assistant import (
+    DEFAULT_AUDIO_CHANNELS,
+    DEFAULT_SAMPLE_FORMAT,
+    DEFAULT_SAMPLE_RATE,
+    AudioConfiguration,
+)
 from .voice_assistant import Commands as VaCommands
-from .voice_assistant import SampleFormat
 from .voice_stream import VoiceSession, VoiceStreamHandler
 
 try:
@@ -778,9 +782,9 @@ class IntegrationAPI:
             cfg = params.get("audio_cfg")
             audio_cfg = (
                 AudioConfiguration(
-                    channels=cfg.get("channels", 1),
-                    sample_rate=cfg.get("sample_rate", 16000),
-                    sample_format=cfg.get("sample_format", SampleFormat.I16),
+                    channels=cfg.get("channels", DEFAULT_AUDIO_CHANNELS),
+                    sample_rate=cfg.get("sample_rate", DEFAULT_SAMPLE_RATE),
+                    sample_format=cfg.get("sample_format", DEFAULT_SAMPLE_FORMAT),
                 )
                 if cfg
                 else AudioConfiguration()

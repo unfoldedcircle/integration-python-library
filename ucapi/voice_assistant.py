@@ -19,6 +19,9 @@ from typing import Any, Optional
 from ucapi.api_definitions import CommandHandler
 from ucapi.entity import Entity, EntityTypes
 
+DEFAULT_AUDIO_CHANNELS = 1
+DEFAULT_SAMPLE_RATE = 16000
+
 
 class States(str, Enum):
     """Voice Assistant entity states."""
@@ -95,6 +98,9 @@ class SampleFormat(str, Enum):
     """Float 32 bit."""
 
 
+DEFAULT_SAMPLE_FORMAT = SampleFormat.I16
+
+
 @dataclass(slots=True)
 class AudioConfiguration:
     """Audio stream specification.
@@ -106,13 +112,13 @@ class AudioConfiguration:
     - Audio sample format.
     """
 
-    channels: int = 1
+    channels: int = DEFAULT_AUDIO_CHANNELS
     """Number of audio channels. Default: 1."""
 
-    sample_rate: int = 16000
+    sample_rate: int = DEFAULT_SAMPLE_RATE
     """Audio sample rate in Hz (commonly 16000 by default for voice use cases)."""
 
-    sample_format: SampleFormat = SampleFormat.I16
+    sample_format: SampleFormat = DEFAULT_SAMPLE_FORMAT
     """Audio sample format."""
 
 
