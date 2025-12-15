@@ -449,20 +449,13 @@ class IntegrationAPI:
         """
         if self._voice_handler is None:
             # Log once per stream and ignore further binary messages.
-            cfg = getattr(msg, "configuration", None)
             _LOG.warning(
-                "[%s] proto VoiceBegin: session_id=%s cfg(ch=%s sr=%s fmt=%s af=%s) (no voice handler)",
+                "[%s] proto VoiceBegin: no voice handler registered! Ignoring voice stream",
                 websocket.remote_address,
-                getattr(msg, "session_id", None),
-                getattr(cfg, "channels", None) if cfg else None,
-                getattr(cfg, "sample_rate", None) if cfg else None,
-                getattr(cfg, "sample_format", None) if cfg else None,
-                getattr(cfg, "format", None) if cfg else None,
             )
             return
 
         session_id = int(getattr(msg, "session_id", 0) or 0)
-        session_id = 0  # FIXME(voice) until core is fixed
         session = self._voice_sessions.get(session_id)
         if not session:
             _LOG.error(
@@ -472,13 +465,15 @@ class IntegrationAPI:
             )
             return
 
-        # TODO(voice) verify AudioConfiguration in session from voice_start command?
-        # cfg = getattr(msg, "configuration", None)
-        # audio_cfg = AudioConfiguration(
-        #     channels=int(getattr(cfg, "channels", 1) or 1),
-        #     sample_rate=int(getattr(cfg, "sample_rate", 0) or 0),
-        #     sample_format=int(getattr(cfg, "sample_format", 0) or 0), # FIXME convert
-        # )
+        # verify AudioConfiguration in session from voice_start command
+        cfg = getattr(msg, "configuration", None)
+        audio_cfg = AudioConfiguration.from_proto(cfg) or AudioConfiguration()
+        if audio_cfg != session.config:
+            _LOG.error(
+                "[%s] proto VoiceBegin: audio cfg does not match voice_start",
+                websocket.remote_address,
+            )
+            return
 
         # Track ownership for cleanup on disconnect
         owners = self._voice_ws_sessions.setdefault(websocket, set())
@@ -510,7 +505,6 @@ class IntegrationAPI:
             return
 
         session_id = int(getattr(msg, "session_id", 0) or 0)
-        session_id = 0  # FIXME(voice) until core is fixed
         session = self._voice_sessions.get(session_id)
         if not session:
             _LOG.error(
@@ -540,7 +534,6 @@ class IntegrationAPI:
         if self._voice_handler is None:
             return
         session_id = int(getattr(msg, "session_id", 0) or 0)
-        session_id = 0  # FIXME(voice) until core is fixed
         await self._cleanup_voice_session(session_id)
 
     async def _cleanup_voice_session(
@@ -861,7 +854,6 @@ class IntegrationAPI:
         ):
             params = msg_data["params"]
             session_id = params.get("session_id")
-            session_id = 0  # FIXME(voice) until core is fixed
             cfg = params.get("audio_cfg")
             audio_cfg = (
                 AudioConfiguration(

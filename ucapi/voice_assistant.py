@@ -16,8 +16,17 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any, Optional
 
+# Import specific enum constants to avoid pylint no-member on dynamic attributes
 from ucapi.api_definitions import CommandHandler
 from ucapi.entity import Entity, EntityTypes
+
+from ucapi.proto.ucr_integration_voice_pb2 import (  # pylint: disable=no-name-in-module # isort:skip # noqa
+    F32 as PB_F32,
+    I16 as PB_I16,
+    I32 as PB_I32,
+    U16 as PB_U16,
+    U32 as PB_U32,
+)
 
 DEFAULT_AUDIO_CHANNELS = 1
 DEFAULT_SAMPLE_RATE = 16000
@@ -97,6 +106,48 @@ class SampleFormat(str, Enum):
     F32 = "F32"
     """Float 32 bit."""
 
+    @classmethod
+    def from_proto(cls, value: Any) -> Optional["SampleFormat"]:
+        """Convert protobuf enum ``SampleFormat`` to Python enum.
+
+        Returns ``None`` when the value is unknown or not available in this
+        Python enum (e.g., ``SAMPLE_FORMAT_UNKNOWN``, ``I8``, ``U8``).
+
+        Accepts the following inputs:
+        - Protobuf enum value (``pb2.SampleFormat``)
+        - Integer value of the protobuf enum
+        - String value (e.g., "I16", "U32")
+        - ``None``
+        """
+        if value is None:
+            return None
+
+        # Map protobuf values (or their ints) to our Python enum
+        mapping: dict[int, SampleFormat] = {
+            int(PB_I16): cls.I16,
+            int(PB_I32): cls.I32,
+            int(PB_U16): cls.U16,
+            int(PB_U32): cls.U32,
+            int(PB_F32): cls.F32,
+        }
+
+        if isinstance(value, int):
+            return mapping.get(int(value))
+
+        if isinstance(value, str):
+            key = value.strip().upper()
+            # Only map to values that exist in this Python enum
+            try:
+                return cls[key]
+            except KeyError:
+                return None
+
+        # Fallback for enum-like types (protobuf enum wrappers behave like ints)
+        try:
+            return mapping.get(int(value))
+        except (TypeError, ValueError):
+            return None
+
 
 DEFAULT_SAMPLE_FORMAT = SampleFormat.I16
 
@@ -120,6 +171,69 @@ class AudioConfiguration:
 
     sample_format: SampleFormat = DEFAULT_SAMPLE_FORMAT
     """Audio sample format."""
+
+    @staticmethod
+    def _to_int(value: Any, default: int) -> int:
+        """Best-effort conversion to ``int`` with a sensible default.
+
+        Accepts ``int``/``str``/``None`` and returns ``default`` if conversion
+        fails or value is falsy.
+        """
+        if value is None:
+            return default
+        try:
+            if isinstance(value, bool):  # avoid bool being a subclass of int
+                return default
+            if isinstance(value, (int,)):
+                return int(value) or default
+            if isinstance(value, str):
+                s = value.strip()
+                return int(s) if s else default
+        except (TypeError, ValueError):
+            return default
+        return default
+
+    @classmethod
+    def from_proto(cls, value: Any) -> Optional["AudioConfiguration"]:
+        """Convert protobuf ``AudioConfiguration`` (or mapping) to Python model.
+
+        - ``None`` returns ``None``
+        - Protobuf message: reads fields and converts types
+        - ``dict``/``mapping``: accepts keys ``channels``, ``sample_rate``,
+          ``sample_format`` (strings/ints acceptable)
+
+        The protobuf field ``format`` (``AudioFormat``) is currently ignored in
+        the Python model.
+        """
+        if value is None:
+            return None
+
+        # Extract raw field values from either a proto message or a dict-like
+        if (
+            hasattr(value, "__class__")
+            and value.__class__.__name__ == "AudioConfiguration"
+        ):
+            # Likely a protobuf message instance
+            ch = getattr(value, "channels", DEFAULT_AUDIO_CHANNELS)
+            sr = getattr(value, "sample_rate", DEFAULT_SAMPLE_RATE)
+            sf = getattr(value, "sample_format", None)
+        elif isinstance(value, dict):
+            ch = value.get("channels", DEFAULT_AUDIO_CHANNELS)
+            sr = value.get("sample_rate", DEFAULT_SAMPLE_RATE)
+            sf = value.get("sample_format", None)
+        else:
+            # Unsupported type
+            return None
+
+        channels = cls._to_int(ch, DEFAULT_AUDIO_CHANNELS)
+        sample_rate = cls._to_int(sr, DEFAULT_SAMPLE_RATE)
+        sample_format = SampleFormat.from_proto(sf) or DEFAULT_SAMPLE_FORMAT
+
+        return cls(
+            channels=channels,
+            sample_rate=sample_rate,
+            sample_format=sample_format,
+        )
 
 
 @dataclass(slots=True)
