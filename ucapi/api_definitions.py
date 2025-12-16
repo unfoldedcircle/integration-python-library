@@ -205,8 +205,19 @@ class SetupComplete(SetupAction):
 
 
 CommandHandler: TypeAlias = Callable[
-    [Any, str, dict[str, Any] | None], Awaitable[StatusCodes]
+    [Any, str, dict[str, Any] | None, Any | None], Awaitable[StatusCodes]
 ]
+"""Entity command handler signature.
+
+Parameters:
+
+- entity: entity instance
+- cmd_id: command identifier
+- params: optional command parameters
+- websocket: optional client connection for sending directed events
+
+Returns: status code
+"""
 
 
 SetupHandler: TypeAlias = Callable[[SetupDriver], Awaitable[SetupAction]]

@@ -589,10 +589,10 @@ class IntegrationAPI:
             uc.EventCategory.ENTITY,
         )
 
-    async def send_assistant_event(self, websocket, event: uc.AssistantEvent) -> None:
-        """Send an assistant event to the given WebSocket client."""
+    async def send_assistant_event(self, client, event: uc.AssistantEvent) -> None:
+        """Send an assistant event to the given client connection."""
         await self._send_ws_event(
-            websocket,
+            client,
             uc.WsMsgEvents.ASSISTANT_EVENT,
             asdict(event),
             uc.EventCategory.ENTITY,
@@ -888,9 +888,22 @@ class IntegrationAPI:
             # Start timeout immediately on session creation
             self._schedule_voice_timeout(key)
 
-        result = await entity.command(
-            cmd_id, msg_data["params"] if "params" in msg_data else None
-        )
+        try:
+            result = await entity.command(
+                cmd_id,
+                msg_data["params"] if "params" in msg_data else None,
+                websocket=websocket,
+            )
+        except TypeError:
+            # Entity command method likely doesn't accept 'websocket' kwarg -> legacy handler signature.
+            _LOG.warning(
+                "Old Entity.command signature detected for %s, trying old signature. Please update the command signature.",
+                entity.id,
+            )
+            result = await entity.command(
+                cmd_id, msg_data["params"] if "params" in msg_data else None
+            )
+
         await self.acknowledge_command(websocket, req_id, result)
 
     async def _setup_driver(

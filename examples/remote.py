@@ -46,7 +46,7 @@ supported_commands = [
 
 
 async def cmd_handler(
-    entity: ucapi.Remote, cmd_id: str, params: dict[str, Any] | None
+    entity: ucapi.Remote, cmd_id: str, params: dict[str, Any] | None, websocket: Any
 ) -> ucapi.StatusCodes:
     """
     Remote command handler.
@@ -56,6 +56,7 @@ async def cmd_handler(
     :param entity: remote entity
     :param cmd_id: command
     :param params: optional command parameters
+    :param websocket: optional client connection for sending directed events
     :return: status of the command
     """
     print(f"Got {entity.id} command request: {cmd_id}")

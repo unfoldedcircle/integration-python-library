@@ -11,8 +11,8 @@ from typing import Any, Callable
 
 from pyee.asyncio import AsyncIOEventEmitter
 
-from ucapi.api_definitions import Events
-from ucapi.entity import Entity
+from .api_definitions import Events
+from .entity import Entity
 
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)

@@ -17,10 +17,10 @@ from enum import Enum
 from typing import Any, Optional
 
 # Import specific enum constants to avoid pylint no-member on dynamic attributes
-from ucapi.api_definitions import CommandHandler
-from ucapi.entity import Entity, EntityTypes
+from .api_definitions import CommandHandler
+from .entity import Entity, EntityTypes
 
-from ucapi.proto.ucr_integration_voice_pb2 import (  # pylint: disable=no-name-in-module # isort:skip # noqa
+from .proto.ucr_integration_voice_pb2 import (  # pylint: disable=no-name-in-module # isort:skip # noqa
     F32 as PB_F32,
     I16 as PB_I16,
     I32 as PB_I32,

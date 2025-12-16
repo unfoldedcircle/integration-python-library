@@ -157,7 +157,7 @@ async def handle_user_data_response(msg: ucapi.UserDataResponse) -> ucapi.SetupA
 
 
 async def cmd_handler(
-    entity: ucapi.Button, cmd_id: str, _params: dict[str, Any] | None
+    entity: ucapi.Button, cmd_id: str, _params: dict[str, Any] | None, websocket: Any
 ) -> ucapi.StatusCodes:
     """
     Push button command handler.
@@ -167,6 +167,7 @@ async def cmd_handler(
     :param entity: button entity
     :param cmd_id: command
     :param _params: optional command parameters
+    :param websocket: optional client connection for sending directed events
     :return: status of the command
     """
     print(f"Got {entity.id} command request: {cmd_id}")

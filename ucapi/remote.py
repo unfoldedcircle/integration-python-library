@@ -9,9 +9,9 @@ import dataclasses
 from enum import Enum
 from typing import Any
 
-from ucapi.api_definitions import CommandHandler
-from ucapi.entity import Entity, EntityTypes
-from ucapi.ui import DeviceButtonMapping, EntityCommand, UiPage
+from .api_definitions import CommandHandler
+from .entity import Entity, EntityTypes
+from .ui import DeviceButtonMapping, EntityCommand, UiPage
 
 
 class States(str, Enum):
@@ -135,7 +135,7 @@ class Remote(Entity):
         cmd_handler: CommandHandler = None,
     ):
         """
-        Create remote entity instance.
+        Create remote-entity instance.
 
         :param identifier: entity identifier
         :param name: friendly name

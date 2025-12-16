@@ -45,7 +45,10 @@ async def on_subscribe_entities(entity_ids: list[str]) -> None:
 
 
 async def on_voice_cmd(
-    entity: ucapi.VoiceAssistant, cmd_id: str, params: dict[str, Any] | None
+    entity: ucapi.VoiceAssistant,
+    cmd_id: str,
+    params: dict[str, Any] | None,
+    websocket: Any,
 ) -> ucapi.StatusCodes:
     """
     Voice assistant command handler.
@@ -55,6 +58,7 @@ async def on_voice_cmd(
     :param entity: voice assistant entity
     :param cmd_id: command
     :param params: optional command parameters
+    :param websocket: optional client connection for sending directed events
     :return: status of the command
     """
     # HACK until core is fixed
