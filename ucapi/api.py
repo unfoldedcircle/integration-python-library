@@ -46,7 +46,12 @@ from .voice_assistant import (
     AudioConfiguration,
 )
 from .voice_assistant import Commands as VaCommands
-from .voice_stream import VoiceEndReason, VoiceSession, VoiceStreamHandler
+from .voice_stream import (
+    VoiceEndReason,
+    VoiceSession,
+    VoiceSessionKey,
+    VoiceStreamHandler,
+)
 
 try:
     from ._version import version as __version__
@@ -55,10 +60,6 @@ except ImportError:
 
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
-
-
-VoiceSessionKey = tuple[Any, int]
-"""Tuple of (websocket, session_id)"""
 
 
 @dataclass(slots=True)

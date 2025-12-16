@@ -14,13 +14,16 @@ import asyncio
 import logging
 from asyncio import AbstractEventLoop
 from enum import Enum, auto
-from typing import AsyncIterator, Awaitable, Callable, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Optional
 
 from .api_definitions import AssistantEvent
 from .voice_assistant import AudioConfiguration
 
 _LOG = logging.getLogger(__name__)
 
+
+VoiceSessionKey = tuple[Any, int]
+"""Tuple of (websocket, session_id)"""
 
 VoiceStreamHandler = Callable[["VoiceSession"], Optional[Awaitable[None]]]
 """Public type alias for the handler callable.
@@ -112,6 +115,11 @@ class VoiceSession:
     def __aiter__(self) -> AsyncIterator[bytes]:
         """Return an async iterator over audio frames."""
         return self.frames()
+
+    @property
+    def key(self) -> VoiceSessionKey:
+        """Return the session key to uniquely identify a session."""
+        return self._websocket, self.session_id
 
     async def send_event(self, event: AssistantEvent):
         """Send an assistant event to the session initiator client."""
