@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Voice assistant entity integration example. Bare minimum of an integration driver."""
+"""Simple voice assistant entity integration example.
+
+Requires firmware 2.8.2 or newer.
+
+See the [Android TV integration](https://github.com/unfoldedcircle/integration-androidtv)
+for a full implementation.
+"""
+
 import asyncio
 import logging
 from asyncio import sleep
@@ -24,12 +31,10 @@ from ucapi.voice_assistant import (
     SampleFormat,
     VoiceAssistantEntityOptions,
 )
-from ucapi.voice_stream import VoiceEndReason, VoiceSessionClosed
+from ucapi.voice_stream import VoiceEndReason, VoiceSession, VoiceSessionClosed
 
 loop = asyncio.new_event_loop()
 api = ucapi.IntegrationAPI(loop)
-
-session_id = 0
 
 
 @api.listens_to(ucapi.Events.CONNECT)
@@ -55,15 +60,12 @@ async def on_voice_cmd(
 
     Called by the integration-API if a command is sent to a configured voice_assistant-entity.
 
-    :param entity: voice assistant entity
+    :param entity: Voice assistant entity
     :param cmd_id: command
     :param params: optional command parameters
     :param websocket: optional client connection for sending directed events
     :return: status of the command
     """
-    # HACK until core is fixed
-    global session_id
-
     print(f"Got {entity.id} command request: {cmd_id} {params}")
     if params is None:
         return ucapi.StatusCodes.BAD_REQUEST
@@ -73,25 +75,33 @@ async def on_voice_cmd(
         return ucapi.StatusCodes.BAD_REQUEST
 
     if cmd_id == VACommands.VOICE_START:
-        ready_evt = AssistantEvent(
-            type=AssistantEventType.READY,
-            entity_id=entity.id,
-            session_id=session_id,
-        )
-        await api.broadcast_assistant_event(ready_evt)
-
+        asyncio.create_task(start_voice(websocket, session_id))
         # Acknowledge start; binary audio will arrive on the WS binary channel
         return ucapi.StatusCodes.OK
     return ucapi.StatusCodes.NOT_IMPLEMENTED
 
 
-async def on_voice_session(session):
+async def start_voice(websocket: Any, session_id: int):
+    # Here we'd set up the voice communication to the target device / system
+    await sleep(0.5)
+
+    # Once ready, send the READY event to the remote to start the voice stream.
+    # Otherwise, AssistantEventType.ERROR should be sent instead.
+    ready_evt = AssistantEvent(
+        type=AssistantEventType.READY,
+        entity_id=entity.id,
+        session_id=session_id,
+    )
+    await api.send_assistant_event(websocket, ready_evt)
+
+
+async def on_voice_session(session: VoiceSession):
     print(
         f"Voice stream started: session={session.session_id}, "
-        f"{session.config.channels}ch @ {session.config.sample_rate} Hz {session.config.sample_format.value}"
+        f"{session.config.channels}ch @ {session.config.sample_rate} Hz {session.config.sample_format}"
     )
-    # HACK until core is fixed
-    global session_id
+
+    # Note: a real driver should check if the session_id matches the one from the voice_start command
 
     total = 0
     try:
@@ -104,7 +114,7 @@ async def on_voice_session(session):
         event = AssistantEvent(
             type=AssistantEventType.STT_RESPONSE,
             entity_id=session.entity_id,
-            session_id=session_id,
+            session_id=session.session_id,
             data=AssistantSttResponse(
                 text="I'm just a demo and I don't know what you said."
             ),
@@ -115,7 +125,7 @@ async def on_voice_session(session):
         event = AssistantEvent(
             type=AssistantEventType.TEXT_RESPONSE,
             entity_id=session.entity_id,
-            session_id=session_id,
+            session_id=session.session_id,
             data=AssistantTextResponse(
                 success=True, text=f"You have sent {total} bytes of audio data"
             ),
@@ -132,7 +142,7 @@ async def on_voice_session(session):
         event = AssistantEvent(
             type=AssistantEventType.ERROR,
             entity_id=session.entity_id,
-            session_id=session_id,
+            session_id=session.session_id,
             data=AssistantError(
                 code=(
                     AssistantErrorCode.TIMEOUT
@@ -148,7 +158,7 @@ async def on_voice_session(session):
     event = AssistantEvent(
         type=AssistantEventType.FINISHED,
         entity_id=session.entity_id,
-        session_id=session_id,
+        session_id=session.session_id,
     )
     await session.send_event(event)
 

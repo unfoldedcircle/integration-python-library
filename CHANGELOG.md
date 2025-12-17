@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Breaking Changes
+- Enhance entity command handler with WS client connection parameter in `CommandHandler` callback and `Entity.command`
+  method to allow clients to send back event messages.
+  - The implementation is currently backward-compatible but will be removed in a future release.
+
+### Added
+- New voice-assistant entity with voice-stream session handling.
+
+### Changed
+- Remove logging in Entities.get method if entity doesn't exist. This could lead to excessive logging in some integrations.
+
 ---
 
 ## v0.4.0 - 2025-11-24
