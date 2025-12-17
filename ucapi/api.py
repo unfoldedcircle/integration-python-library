@@ -151,7 +151,7 @@ class IntegrationAPI:
 
         if disable_mdns_publish is False:
             # Setup zeroconf service info
-            name = f"{self._driver_info['driver_id']}._uc-integration._tcp.local."
+            name = f'{self._driver_info["driver_id"]}._uc-integration._tcp.local.'
             hostname = local_hostname()
             driver_name = _get_default_language_string(
                 self._driver_info["name"], "Unknown driver"
@@ -1262,7 +1262,7 @@ def local_hostname() -> str:
 
     return (
         os.getenv("UC_MDNS_LOCAL_HOSTNAME")
-        or f"{socket.gethostname().split('.', 1)[0]}.local."
+        or f'{socket.gethostname().split(".", 1)[0]}.local.'
     )
 
 
