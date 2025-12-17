@@ -9,18 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+---
+
+## v0.5.0 - 2025-12-17
 ### Breaking Changes
 - Enhance entity command handler with WS client connection parameter in `CommandHandler` callback and `Entity.command`
-  method to allow clients to send back event messages.
+  method to allow clients to send back event messages ([#38](https://github.com/unfoldedcircle/integration-python-library/pull/38)).
   - The implementation is currently backward-compatible but will be removed in a future release.
 
 ### Added
-- New voice-assistant entity with voice-stream session handling.
+- New voice-assistant entity with voice-stream session handling ([#38](https://github.com/unfoldedcircle/integration-python-library/pull/38)).
+  - This requires firmware 2.8.2 or newer to work correctly.
 
 ### Changed
-- Remove logging in Entities.get method if entity doesn't exist. This could lead to excessive logging in some integrations.
-
----
+- Remove logging in Entities.get method if entity doesn't exist. This could lead to excessive logging in some integrations ([#38](https://github.com/unfoldedcircle/integration-python-library/pull/38)).
+- Prepare for Python 3.12 and 3.13: replace `asyncio.get_event_loop()` calls in the examples with `asyncio.new_event_loop()` ([#39](https://github.com/unfoldedcircle/integration-python-library/pull/39)).
 
 ## v0.4.0 - 2025-11-24
 ### Breaking Changes
