@@ -8,7 +8,7 @@ Sensor entity definitions.
 from enum import Enum
 from typing import Any
 
-from ucapi.entity import Entity, EntityTypes
+from .entity import Entity, EntityTypes
 
 
 class States(str, Enum):
@@ -94,7 +94,7 @@ class Sensor(Entity):
             EntityTypes.SENSOR,
             features,
             attributes,
-            device_class,
-            options,
-            area,
+            device_class=device_class,
+            options=options,
+            area=area,
         )

@@ -1,5 +1,5 @@
 """
-Integration driver API for Remote Two.
+Integration driver API for Remote Two/3.
 
 :copyright: (c) 2023 by Unfolded Circle ApS.
 :license: MPL-2.0, see LICENSE for more details.
@@ -12,6 +12,7 @@ import os
 import socket
 from asyncio import AbstractEventLoop
 from copy import deepcopy
+from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
 import websockets
@@ -25,9 +26,32 @@ from websockets.exceptions import ConnectionClosedOK
 from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
-import ucapi.api_definitions as uc
-from ucapi.entities import Entities
-from ucapi.media_player import Attributes as MediaAttr
+from . import api_definitions as uc
+from .entities import Entities
+from .entity import EntityTypes
+from .media_player import Attributes as MediaAttr
+
+# Classes are dynamically created at runtime using the Google Protobuf builder pattern.
+# pylint: disable=no-name-in-module
+from .proto.ucr_integration_voice_pb2 import (
+    IntegrationMessage,
+    RemoteVoiceBegin,
+    RemoteVoiceData,
+    RemoteVoiceEnd,
+)
+from .voice_assistant import (
+    DEFAULT_AUDIO_CHANNELS,
+    DEFAULT_SAMPLE_FORMAT,
+    DEFAULT_SAMPLE_RATE,
+    AudioConfiguration,
+)
+from .voice_assistant import Commands as VaCommands
+from .voice_stream import (
+    VoiceEndReason,
+    VoiceSession,
+    VoiceSessionKey,
+    VoiceStreamHandler,
+)
 
 try:
     from ._version import version as __version__
@@ -38,8 +62,18 @@ _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
 
 
+@dataclass(slots=True)
+class _VoiceSessionContext:
+    session: VoiceSession
+    timeout_task: asyncio.Task | None = None
+    handler_task: asyncio.Task | None = None
+
+
+# pylint: disable=too-many-public-methods, too-many-lines
 class IntegrationAPI:
-    """Integration API to communicate with Remote Two."""
+    """Integration API to communicate with Remote Two/3."""
+
+    DEFAULT_VOICE_SESSION_TIMEOUT_S: int = 30
 
     def __init__(self, loop: AbstractEventLoop):
         """
@@ -49,22 +83,37 @@ class IntegrationAPI:
         """
         self._loop = loop
         self._events = AsyncIOEventEmitter(self._loop)
+
         self._setup_handler: uc.SetupHandler | None = None
         self._driver_info: dict[str, Any] = {}
         self._driver_path: str | None = None
         self._state: uc.DeviceStates = uc.DeviceStates.DISCONNECTED
+
         self._server_task = None
         self._clients = set()
 
-        self._config_dir_path: str = (
-            os.getenv("UC_CONFIG_HOME") or os.getenv("HOME") or "./"
-        )
+        self._config_dir_path = self._resolve_config_dir()
 
         self._available_entities = Entities("available", self._loop)
         self._configured_entities = Entities("configured", self._loop)
 
+        self._voice_handler: VoiceStreamHandler | None = None
+        self._voice_session_timeout: int = self.DEFAULT_VOICE_SESSION_TIMEOUT_S
+        # Active voice sessions
+        self._voice_sessions: dict[VoiceSessionKey, _VoiceSessionContext] = {}
+        # Enforce: at most one active session per entity_id (across all websockets)
+        self._voice_session_by_entity: dict[str, VoiceSessionKey] = {}
+
         # Setup event loop
         asyncio.set_event_loop(self._loop)
+
+    @staticmethod
+    def _resolve_config_dir() -> str:
+        return os.getenv("UC_CONFIG_HOME") or os.getenv("HOME") or "./"
+
+    @staticmethod
+    def _voice_key(websocket: Any, session_id: int) -> VoiceSessionKey:
+        return websocket, int(session_id)
 
     async def init(
         self, driver_path: str, setup_handler: uc.SetupHandler | None = None
@@ -165,8 +214,19 @@ class IntegrationAPI:
             self._events.emit(uc.Events.CLIENT_CONNECTED)
 
             async for message in websocket:
-                # process message
-                await self._process_ws_message(websocket, message)
+                # Distinguish between text (str) and binary (bytes-like) messages
+                if isinstance(message, str):
+                    # JSON text message
+                    await self._process_ws_message(websocket, message)
+                elif isinstance(message, (bytes, bytearray, memoryview)):
+                    # Binary message (protobuf in future)
+                    await self._process_ws_binary_message(websocket, bytes(message))
+                else:
+                    _LOG.warning(
+                        "[%s] WS: Unsupported message type %s",
+                        websocket.remote_address,
+                        type(message).__name__,
+                    )
 
         except ConnectionClosedOK:
             _LOG.info("[%s] WS: Connection closed", websocket.remote_address)
@@ -188,6 +248,19 @@ class IntegrationAPI:
             )
 
         finally:
+            # Cleanup any active voice sessions associated with this websocket
+            keys_to_cleanup = [k for k in self._voice_sessions if k[0] is websocket]
+            for key in keys_to_cleanup:
+                try:
+                    await self._cleanup_voice_session(key, VoiceEndReason.REMOTE)
+                except Exception as ex:  # pylint: disable=W0718
+                    _LOG.exception(
+                        "[%s] WS: Error during voice session cleanup for session_id=%s: %s",
+                        websocket.remote_address,
+                        key[1],
+                        ex,
+                    )
+
             self._clients.remove(websocket)
             _LOG.info("[%s] WS: Client removed", websocket.remote_address)
             self._events.emit(uc.Events.CLIENT_DISCONNECTED)
@@ -338,6 +411,267 @@ class IntegrationAPI:
                 await self._handle_ws_request_msg(websocket, msg, req_id, msg_data)
         elif kind == "event":
             await self._handle_ws_event_msg(msg, msg_data)
+
+    async def _process_ws_binary_message(self, websocket, data: bytes) -> None:
+        """Process a binary WebSocket message using protobuf IntegrationMessage.
+
+        - Deserializes ``IntegrationMessage`` from the incoming bytes.
+        - Dispatches to specific handlers based on the concrete oneof field.
+        - Logs errors on deserialization failures and unknown message kinds.
+        """
+        if _LOG.isEnabledFor(logging.DEBUG):
+            _LOG.debug(
+                "[%s] <-: <binary %d bytes>", websocket.remote_address, len(data)
+            )
+
+        # Parse IntegrationMessage from bytes
+        try:
+            imsg = IntegrationMessage()
+            imsg.ParseFromString(data)
+        except Exception as ex:  # pylint: disable=W0718
+            _LOG.error(
+                "[%s] proto: Failed to parse IntegrationMessage (%d bytes): %s",
+                websocket.remote_address,
+                len(data),
+                ex,
+            )
+            return
+
+        kind = imsg.WhichOneof("message")
+        if kind == "voice_begin":
+            await self._on_remote_voice_begin(websocket, imsg.voice_begin)
+        elif kind == "voice_data":
+            await self._on_remote_voice_data(websocket, imsg.voice_data)
+        elif kind == "voice_end":
+            await self._on_remote_voice_end(websocket, imsg.voice_end)
+        else:
+            # Either empty oneof or a newer message type unknown to this client
+            _LOG.info(
+                "[%s] proto: Received unsupported or unknown IntegrationMessage: %s",
+                websocket.remote_address,
+                kind,
+            )
+
+    async def _on_remote_voice_begin(self, websocket, msg: RemoteVoiceBegin) -> None:
+        """Handle a RemoteVoiceBegin protobuf message.
+
+        Behavior:
+        - If no voice handler is registered: log a concise info line and ignore
+          the stream (drop subsequent data/end silently).
+        - If a handler is registered: create a VoiceSession and invoke the
+          handler in the background.
+        """
+        if self._voice_handler is None:
+            # Log once per stream and ignore further binary messages.
+            _LOG.warning(
+                "[%s] proto VoiceBegin: no voice handler registered! Ignoring voice stream",
+                websocket.remote_address,
+            )
+            return
+
+        session_id = int(getattr(msg, "session_id", 0) or 0)
+        key = self._voice_key(websocket, session_id)
+        ctx = self._voice_sessions.get(key)
+        if ctx is None:
+            _LOG.error(
+                "[%s] proto VoiceBegin: no voice session for session_id=%s",
+                websocket.remote_address,
+                session_id,
+            )
+            return
+
+        session = ctx.session
+
+        # verify AudioConfiguration in session from voice_start command
+        cfg = getattr(msg, "configuration", None)
+        audio_cfg = AudioConfiguration.from_proto(cfg) or AudioConfiguration()
+        if audio_cfg != session.config:
+            _LOG.error(
+                "[%s] proto VoiceBegin: audio cfg does not match voice_start",
+                websocket.remote_address,
+            )
+            return
+
+        if _LOG.isEnabledFor(logging.DEBUG):
+            _LOG.debug(
+                "[%s] proto VoiceBegin: session_id=%s cfg(ch=%s sr=%s fmt=%s)",
+                websocket.remote_address,
+                session.session_id,
+                session.config.channels,
+                session.config.sample_rate,
+                session.config.sample_format,
+            )
+
+        # Invoke handler in the background so the WS loop is not blocked
+        ctx.handler_task = self._loop.create_task(self._run_voice_handler(session))
+
+    async def _on_remote_voice_data(self, websocket, msg: RemoteVoiceData) -> None:
+        """Handle a RemoteVoiceData protobuf message.
+
+        If no voice handler is registered, this function returns immediately
+        without logging to avoid noise (as per default behavior).
+        """
+        if self._voice_handler is None:
+            # already logged in RemoteVoiceBegin
+            return
+
+        session_id = int(getattr(msg, "session_id", 0) or 0)
+        key = self._voice_key(websocket, session_id)
+        ctx = self._voice_sessions.get(key)
+        if ctx is None:
+            _LOG.error(
+                "[%s] proto VoiceData: no voice session for session_id=%s",
+                websocket.remote_address,
+                session_id,
+            )
+            return
+
+        samples = getattr(msg, "samples", b"") or b""
+        if samples:
+            try:
+                ctx.session.feed(bytes(samples))
+            except Exception as ex:  # pylint: disable=W0718
+                _LOG.error(
+                    "[%s] proto VoiceData: session %s processing error: %s",
+                    websocket.remote_address,
+                    session_id,
+                    ex,
+                )
+
+    async def _on_remote_voice_end(self, websocket, msg: RemoteVoiceEnd) -> None:
+        """Handle a RemoteVoiceEnd protobuf message.
+
+        If no voice handler is registered, do nothing (default ignore behavior).
+        """
+        if self._voice_handler is None:
+            return
+        session_id = int(getattr(msg, "session_id", 0) or 0)
+        await self._cleanup_voice_session(self._voice_key(websocket, session_id))
+
+    async def _cleanup_voice_session(
+        self,
+        key: VoiceSessionKey,
+        end_reason: VoiceEndReason = VoiceEndReason.NORMAL,
+    ) -> None:
+        """Cleanup internal state for a voice session context."""
+        ctx = self._voice_sessions.pop(key, None)
+        if ctx is None:
+            return
+
+        # Cancel timeout task if present
+        t = ctx.timeout_task
+        if t is not None and not t.done():
+            t.cancel()
+
+        # Enforce entity_id uniqueness index cleanup
+        if self._voice_session_by_entity.get(ctx.session.entity_id) == key:
+            self._voice_session_by_entity.pop(ctx.session.entity_id, None)
+
+        # End session iterator
+        if not ctx.session.closed:
+            ctx.session.end(end_reason)
+
+        # Note: do not cancel handler task; handler should exit on session.end()
+        ctx.handler_task = None
+
+    def set_voice_stream_handler(self, handler: VoiceStreamHandler | None) -> None:
+        """Register or clear the voice stream handler.
+
+        Passing ``None`` clears the handler. When no handler is registered,
+        binary voice messages are ignored and only the initial begin is logged.
+        """
+        self._voice_handler = handler
+
+    async def broadcast_assistant_event(self, event: uc.AssistantEvent) -> None:
+        """Broadcast an assistant event to all connected WebSocket clients."""
+        await self._broadcast_ws_event(
+            uc.WsMsgEvents.ASSISTANT_EVENT,
+            asdict(event),
+            uc.EventCategory.ENTITY,
+        )
+
+    async def send_assistant_event(self, client, event: uc.AssistantEvent) -> None:
+        """Send an assistant event to the given client connection."""
+        await self._send_ws_event(
+            client,
+            uc.WsMsgEvents.ASSISTANT_EVENT,
+            asdict(event),
+            uc.EventCategory.ENTITY,
+        )
+
+    async def _run_voice_handler(self, session: VoiceSession) -> None:
+        """Run the user-provided voice handler safely.
+
+        Accepts both sync and async callables. Ensures session cleanup on exit.
+        """
+        handler = self._voice_handler
+        if handler is None:
+            # Handler cleared after session start; just end the session
+            session.end(VoiceEndReason.LOCAL)
+            return
+        try:
+            result = handler(session)
+            if asyncio.iscoroutine(result):
+                await result
+        except Exception as ex:  # pylint: disable=W0718
+            _LOG.exception("Voice handler failed for session %s", session.session_id)
+            if not session.closed:
+                session.end(VoiceEndReason.ERROR, ex)
+        finally:
+            # Ensure iterator is unblocked and session is cleaned up
+            await self._cleanup_voice_session(session.session_id)
+
+    def _schedule_voice_timeout(self, key: VoiceSessionKey) -> None:
+        """Schedule the timeout task for a voice session.
+
+        Starts counting immediately at creation time. When the timeout expires and the
+        session is still active, the handler is notified (invoked) if not already
+        started, the session is ended, and cleanup is performed.
+        """
+        ctx = self._voice_sessions.get(key)
+        if ctx is None:
+            return
+
+        # Cancel pre-existing task if any (defensive)
+        existing = ctx.timeout_task
+        if existing is not None and not existing.done():
+            existing.cancel()
+
+        ctx.timeout_task = self._loop.create_task(self._voice_session_timeout_task(key))
+
+    async def _voice_session_timeout_task(self, key: VoiceSessionKey) -> None:
+        """Timeout watchdog for a voice session."""
+        try:
+            await asyncio.sleep(self._voice_session_timeout)
+        except asyncio.CancelledError:
+            return
+
+        # If still active after timeout; take action
+        ctx = self._voice_sessions.get(key)
+        if ctx is None:
+            return
+
+        _LOG.warning(
+            "Voice session %s timed out after %ss",
+            ctx.session.session_id,
+            self._voice_session_timeout,
+        )
+
+        # If handler not started yet, start it now (best effort)
+        if ctx.handler_task is None and self._voice_handler is not None:
+            try:
+                ctx.handler_task = self._loop.create_task(
+                    self._run_voice_handler(ctx.session)
+                )
+            except Exception:  # pylint: disable=W0718
+                _LOG.exception(
+                    "Failed to start voice handler on timeout for session %s",
+                    ctx.session.session_id,
+                )
+
+        # End and cleanup
+        ctx.session.end(VoiceEndReason.TIMEOUT)
+        await self._cleanup_voice_session(key)
 
     async def _handle_ws_request_msg(
         self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None
@@ -517,9 +851,60 @@ class IntegrationAPI:
             await self.acknowledge_command(websocket, req_id, uc.StatusCodes.NOT_FOUND)
             return
 
-        result = await entity.command(
-            cmd_id, msg_data["params"] if "params" in msg_data else None
-        )
+        if (
+            entity.entity_type == EntityTypes.VOICE_ASSISTANT
+            and cmd_id == VaCommands.VOICE_START
+            and "params" in msg_data
+        ):
+            params = msg_data["params"]
+            session_id = int(params.get("session_id"))
+            cfg = params.get("audio_cfg")
+            audio_cfg = (
+                AudioConfiguration(
+                    channels=cfg.get("channels", DEFAULT_AUDIO_CHANNELS),
+                    sample_rate=cfg.get("sample_rate", DEFAULT_SAMPLE_RATE),
+                    sample_format=cfg.get("sample_format", DEFAULT_SAMPLE_FORMAT),
+                )
+                if cfg
+                else AudioConfiguration()
+            )
+
+            # Enforce: only one active session per entity_id across all websockets
+            existing_key = self._voice_session_by_entity.get(entity_id)
+            if existing_key is not None:
+                await self._cleanup_voice_session(existing_key, VoiceEndReason.LOCAL)
+
+            key = self._voice_key(websocket, session_id)
+            session = VoiceSession(
+                session_id,
+                entity_id,
+                audio_cfg,
+                api=self,
+                websocket=websocket,
+                loop=self._loop,
+            )
+            self._voice_sessions[key] = _VoiceSessionContext(session=session)
+            self._voice_session_by_entity[entity_id] = key
+
+            # Start timeout immediately on session creation
+            self._schedule_voice_timeout(key)
+
+        try:
+            result = await entity.command(
+                cmd_id,
+                msg_data["params"] if "params" in msg_data else None,
+                websocket=websocket,
+            )
+        except TypeError:
+            # Entity command method likely doesn't accept 'websocket' kwarg -> legacy handler signature.
+            _LOG.warning(
+                "Old Entity.command signature detected for %s, trying old signature. Please update the command signature.",
+                entity.id,
+            )
+            result = await entity.command(
+                cmd_id, msg_data["params"] if "params" in msg_data else None
+            )
+
         await self.acknowledge_command(websocket, req_id, result)
 
     async def _setup_driver(
@@ -632,7 +1017,7 @@ class IntegrationAPI:
         self, websocket, req_id: int, status_code: uc.StatusCodes = uc.StatusCodes.OK
     ) -> None:
         """
-        Acknowledge a command from Remote Two.
+        Acknowledge a command from Remote Two/3.
 
         :param websocket: client connection
         :param req_id: request message identifier to acknowledge
@@ -645,7 +1030,7 @@ class IntegrationAPI:
 
     async def driver_setup_progress(self, websocket) -> None:
         """
-        Send a driver setup progress event to Remote Two.
+        Send a driver setup progress event to Remote Two/3.
 
         :param websocket: client connection
 
@@ -713,7 +1098,7 @@ class IntegrationAPI:
         )
 
     async def driver_setup_complete(self, websocket) -> None:
-        """Send a driver setup complete event to Remote Two."""
+        """Send a driver setup complete event to Remote Two/3."""
         data = {"event_type": "STOP", "state": "OK"}
 
         await self._send_ws_event(
@@ -721,7 +1106,7 @@ class IntegrationAPI:
         )
 
     async def driver_setup_error(self, websocket, error="OTHER") -> None:
-        """Send a driver setup error event to Remote Two."""
+        """Send a driver setup error event to Remote Two/3."""
         data = {"event_type": "STOP", "state": "ERROR", "error": error}
 
         await self._send_ws_event(

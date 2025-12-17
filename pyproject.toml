@@ -16,11 +16,11 @@ classifiers = [
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries",
     "Topic :: Home Automation",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
 requires-python = ">=3.10"
 dependencies = [
+    "protobuf~=6.33.2",
     "pyee>=9.0",
     "websockets>=14.0",
     "zeroconf>=0.120.0",
@@ -48,7 +48,7 @@ testing = [
 ]
 
 [tool.setuptools]
-packages = ["ucapi"]
+packages = ["ucapi", "ucapi.proto"]
 platforms = ["any"]
 license-files = ["LICENSE"]
 
@@ -57,6 +57,7 @@ write_to = "ucapi/_version.py"
 
 [tool.isort]
 profile = "black"
+skip_glob = ["ucapi/proto/*_pb2.py", "ucapi/proto/*_pb2.pyi"]
 
 [tool.pylint.exceptions]
 overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
@@ -64,10 +65,13 @@ overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
 [tool.pylint.format]
 max-line-length = "88"
 
-[tool.pylint.MASTER]
+[tool.pylint.main]
 ignore-paths = [
     # ignore generated file
-    "ucapi/_version.py"
+    "ucapi/_version.py",
+    # ignore generated protobuf modules (Python + type stubs and optional gRPC stubs)
+    "ucapi/proto/.*_pb2.py",
+    "ucapi/proto/.*_pb2.pyi",
 ]
 
 [tool.pylint."messages control"]
@@ -93,3 +97,13 @@ disable = [
 # This flag controls whether inconsistent-quotes generates a warning when the
 # character used as a quote delimiter is used inconsistently within a module.
 check-quote-consistency = true
+
+
+[tool.black]
+line-length = 88
+# Exclude generated protobuf modules, even if passed explicitly to Black
+force-exclude = """
+(
+  proto/.+_pb2(?:_grpc)?\\.pyi?$  # *_pb2.py, *_pb2.pyi, *_pb2_grpc.py
+)
+"""

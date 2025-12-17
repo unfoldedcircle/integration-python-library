@@ -7,8 +7,8 @@ Button entity definitions.
 
 from enum import Enum
 
-from ucapi.api_definitions import CommandHandler
-from ucapi.entity import Entity, EntityTypes
+from .api_definitions import CommandHandler
+from .entity import Entity, EntityTypes
 
 
 class States(str, Enum):

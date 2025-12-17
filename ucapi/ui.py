@@ -51,7 +51,7 @@ class DeviceButtonMapping:
     """Physical button command mapping."""
 
     button: str
-    """Physical button identifier. See Buttons for Remote Two identifiers."""
+    """Physical button identifier. See Buttons for Remote Two/3 identifiers."""
     short_press: EntityCommand | None = None
     """Short press command of the button."""
     long_press: EntityCommand | None = None

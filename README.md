@@ -4,12 +4,14 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 This library simplifies writing Python-based integrations for the [Unfolded Circle Remote devices](https://www.unfoldedcircle.com/)
-by wrapping the [WebSocket Integration API](https://github.com/unfoldedcircle/core-api/tree/main/integration-api).
+by wrapping the [WebSocket Integration API](https://github.com/unfoldedcircle/core-api/tree/main/integration-api)
+and supporting the [available entities](https://unfoldedcircle.github.io/core-api/entities/).
 
-It's an alpha release (in our eyes). Breaking changes are to be expected and missing features will be continuously added.
-Based on our [Node.js integration library](https://github.com/unfoldedcircle/integration-node-library).
+> [!NOTE]
+> Please note that this library is more of a convenience Python wrapper for the WebSocket Integreation-API than a
+> full-featured SDK. It is based on our [Node.js integration library](https://github.com/unfoldedcircle/integration-node-library).
 
-❗️**Attention:**
+> [!IMPORTANT]
 > This is our first Python project, and we don't see ourselves as Python professionals.  
 > Therefore, the library is most likely not yet that Pythonic!  
 > We are still learning and value your feedback on how to improve it :-)
@@ -17,10 +19,15 @@ Based on our [Node.js integration library](https://github.com/unfoldedcircle/int
 Not yet supported:
 
 - Secure WebSocket
-- Token based authentication
+- Token-based authentication
 
 Requirements:
-- Python 3.10 or newer
+- Python 3.11 or newer
+
+Integrations using this library:
+  - [Android TV integration](https://github.com/unfoldedcircle/integration-androidtv)
+  - [Apple TV integration](https://github.com/unfoldedcircle/integration-appletv)
+  - [Denon AVR integration](https://github.com/unfoldedcircle/integration-denonavr)
 
 ## Installation
 
@@ -29,8 +36,7 @@ Use pip:
 pip3 install ucapi
 ```
 
-See [examples directory](https://github.com/aitatoi/integration-python-library/blob/main/examples) for a minimal
-integration driver example. More examples will be published.
+See [examples directory](https://github.com/aitatoi/integration-python-library/blob/main/examples) for some minimal integration driver examples.
 
 ### Environment Variables
 

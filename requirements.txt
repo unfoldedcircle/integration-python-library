@@ -2,6 +2,7 @@
 # Waiting for: https://github.com/pypa/pip/issues/11440
 # Workaround: use a pre-commit hook with https://github.com/scikit-image/scikit-image/blob/main/tools/generate_requirements.py
 
+protobuf~=6.33.2
 pyee>=9.0
 websockets>=14.0
 zeroconf>=0.120.0

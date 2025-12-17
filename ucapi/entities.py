@@ -11,8 +11,8 @@ from typing import Any, Callable
 
 from pyee.asyncio import AsyncIOEventEmitter
 
-from ucapi.api_definitions import Events
-from ucapi.entity import Entity
+from .api_definitions import Events
+from .entity import Entity
 
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
@@ -39,7 +39,6 @@ class Entities:
     def get(self, entity_id: str) -> Entity | None:
         """Retrieve entity with given identifier."""
         if entity_id not in self._storage:
-            _LOG.debug("[%s]: entity not found: '%s'", self._id, entity_id)
             return None
 
         return self._storage[entity_id]

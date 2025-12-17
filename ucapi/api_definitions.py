@@ -46,7 +46,7 @@ class IntegrationSetupError(str, Enum):
 
 # Does WsMessages need to be public?
 class WsMessages(str, Enum):
-    """WebSocket request messages from Remote Two."""
+    """WebSocket request messages from Remote Two/3."""
 
     AUTHENTICATION = "authentication"
     GET_DRIVER_VERSION = "get_driver_version"
@@ -63,7 +63,7 @@ class WsMessages(str, Enum):
 
 # Does WsMsgEvents need to be public?
 class WsMsgEvents(str, Enum):
-    """WebSocket event messages from Remote Two."""
+    """WebSocket event messages from Remote Two/3."""
 
     CONNECT = "connect"
     DISCONNECT = "disconnect"
@@ -77,6 +77,7 @@ class WsMsgEvents(str, Enum):
     DRIVER_METADATA = "driver_metadata"
     DRIVER_SETUP_CHANGE = "driver_setup_change"
     ABORT_DRIVER_SETUP = "abort_driver_setup"
+    ASSISTANT_EVENT = "assistant_event"
 
 
 class Events(str, Enum):
@@ -120,7 +121,7 @@ class DriverSetupRequest(SetupDriver):
 
     If a driver includes a ``setup_data_schema`` object in its driver metadata, it
     enables the dynamic driver setup process. The setup process can be a simple
-    "start-confirm-done" between the Remote Two and the integration driver, or a fully
+    "start-confirm-done" between the Remote Two/3 and the integration driver, or a fully
     dynamic, multistep process with user interactions, where the user has to provide
     additional data or select different options.
 
@@ -204,8 +205,100 @@ class SetupComplete(SetupAction):
 
 
 CommandHandler: TypeAlias = Callable[
-    [Any, str, dict[str, Any] | None], Awaitable[StatusCodes]
+    [Any, str, dict[str, Any] | None, Any | None], Awaitable[StatusCodes]
 ]
+"""Entity command handler signature.
+
+Parameters:
+
+- entity: entity instance
+- cmd_id: command identifier
+- params: optional command parameters
+- websocket: optional client connection for sending directed events
+
+Returns: status code
+"""
 
 
 SetupHandler: TypeAlias = Callable[[SetupDriver], Awaitable[SetupAction]]
+
+
+# ---------------------------------------------------------------------------
+# Assistant event message definitions
+# ---------------------------------------------------------------------------
+
+
+class AssistantEventType(str, Enum):
+    """Type discriminator for assistant event messages."""
+
+    READY = "ready"
+    STT_RESPONSE = "stt_response"
+    TEXT_RESPONSE = "text_response"
+    SPEECH_RESPONSE = "speech_response"
+    FINISHED = "finished"
+    ERROR = "error"
+
+
+class AssistantErrorCode(str, Enum):
+    """Error codes for assistant processing."""
+
+    SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
+    INVALID_AUDIO = "INVALID_AUDIO"
+    NO_TEXT_RECOGNIZED = "NO_TEXT_RECOGNIZED"
+    INTENT_FAILED = "INTENT_FAILED"
+    TTS_FAILED = "TTS_FAILED"
+    TIMEOUT = "TIMEOUT"
+    UNEXPECTED_ERROR = "UNEXPECTED_ERROR"
+
+
+@dataclass
+class AssistantSttResponse:
+    """Transcription result of the user's speech input."""
+
+    text: str
+
+
+@dataclass
+class AssistantTextResponse:
+    """Textual response and success flag for the processed command."""
+
+    success: bool
+    text: str
+
+
+@dataclass
+class AssistantSpeechResponse:
+    """Reference to a TTS audio response provided by the integration driver."""
+
+    url: str
+    mime_type: str
+
+
+@dataclass
+class AssistantError:
+    """Error detail for a failed assistant processing attempt."""
+
+    code: AssistantErrorCode
+    message: str
+
+
+AssistantEventData: TypeAlias = (
+    AssistantSttResponse
+    | AssistantTextResponse
+    | AssistantSpeechResponse
+    | AssistantError
+)
+
+
+@dataclass
+class AssistantEvent:
+    """Assistant event payload sent via the ``assistant_event`` message.
+
+    This payload is emitted by the integration driver to start the audio stream and
+    to provide optional feedback about voice command processing and outcome.
+    """
+
+    type: AssistantEventType
+    entity_id: str
+    session_id: int
+    data: AssistantEventData | None = None

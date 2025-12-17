@@ -8,8 +8,8 @@ Media-player entity definitions.
 from enum import Enum
 from typing import Any
 
-from ucapi.api_definitions import CommandHandler
-from ucapi.entity import Entity, EntityTypes
+from .api_definitions import CommandHandler
+from .entity import Entity, EntityTypes
 
 
 class States(str, Enum):
@@ -226,8 +226,8 @@ class MediaPlayer(Entity):
             EntityTypes.MEDIA_PLAYER,
             features,
             attributes,
-            device_class,
-            options,
-            area,
-            cmd_handler,
+            device_class=device_class,
+            options=options,
+            area=area,
+            cmd_handler=cmd_handler,
         )
