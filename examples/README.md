@@ -1,6 +1,6 @@
 # API wrapper examples
 
-This directory contains a few examples on how to use the Remote Two Integration-API wrapper.
+This directory contains a few examples on how to use the Remote Two/3 Integration-API wrapper.
 
 Each example uses a driver metadata definition file. It's a json file named after the example.
 The most important fields are:
@@ -39,3 +39,9 @@ and are not yet available as typed Python objects.
 
 See `Setting` object definition and the referenced SettingTypeNumber, SettingTypeText, SettingTypeTextArea,
 SettingTypePassword, SettingTypeCheckbox, SettingTypeDropdown, SettingTypeLabel. 
+
+## voice
+
+The [voice ](voice.py) example shows how to use the voice-assistant entity and receiving a microphone audio stream.
+
+Firmware version 2.8.2 or higher is required.

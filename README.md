@@ -24,6 +24,11 @@ Not yet supported:
 Requirements:
 - Python 3.11 or newer
 
+Integrations using this library:
+  - [Android TV integration](https://github.com/unfoldedcircle/integration-androidtv)
+  - [Apple TV integration](https://github.com/unfoldedcircle/integration-appletv)
+  - [Denon AVR integration](https://github.com/unfoldedcircle/integration-denonavr)
+
 ## Installation
 
 Use pip:
@@ -31,8 +36,7 @@ Use pip:
 pip3 install ucapi
 ```
 
-See [examples directory](https://github.com/aitatoi/integration-python-library/blob/main/examples) for a minimal
-integration driver example. More examples will be published.
+See [examples directory](https://github.com/aitatoi/integration-python-library/blob/main/examples) for some minimal integration driver examples.
 
 ### Environment Variables
 
