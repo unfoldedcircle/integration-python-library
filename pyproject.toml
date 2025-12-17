@@ -40,7 +40,7 @@ content-type = "text/markdown; charset=UTF-8"
 
 [project.optional-dependencies]
 testing = [
-    "pylint",
+    "pylint==4.0.3",
     "flake8-docstrings",
     "flake8",
     "black",
