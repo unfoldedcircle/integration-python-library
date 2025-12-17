@@ -6,7 +6,7 @@ from typing import Any
 
 import ucapi
 
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 api = ucapi.IntegrationAPI(loop)
 
 

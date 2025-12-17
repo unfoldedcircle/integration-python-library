@@ -18,7 +18,7 @@ classifiers = [
     "Topic :: Home Automation",
     "Programming Language :: Python :: 3.11",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "protobuf~=6.33.2",
     "pyee>=9.0",
@@ -40,7 +40,7 @@ content-type = "text/markdown; charset=UTF-8"
 
 [project.optional-dependencies]
 testing = [
-    "pylint",
+    "pylint==4.0.4",
     "flake8-docstrings",
     "flake8",
     "black",
