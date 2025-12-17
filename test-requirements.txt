@@ -2,7 +2,7 @@
 # Waiting for: https://github.com/pypa/pip/issues/11440
 # Workaround: use a pre-commit hook with https://github.com/scikit-image/scikit-image/blob/main/tools/generate_requirements.py
 
-# pylint has a tendendy for stricter rules in a patch update!
+# pin pylint version: it has a tendendy for stricter rules in patch updates!
 pylint==4.0.4
 flake8-docstrings
 flake8
