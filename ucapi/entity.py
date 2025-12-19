@@ -31,6 +31,16 @@ class EntityTypes(str, Enum):
     VOICE_ASSISTANT = "voice_assistant"
 
 
+class CommonStates(str, Enum):
+    """Common entity states available in all entities."""
+
+    UNAVAILABLE = "UNAVAILABLE"
+    """The entity is currently not available.
+    The UI will render the entity as inactive until the entity becomes active again."""
+    UNKNOWN = "UNKNOWN"
+    """The entity is available but the current state is unknown."""
+
+
 class Entity:
     """
     Entity base class.
