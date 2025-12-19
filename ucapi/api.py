@@ -75,13 +75,14 @@ class IntegrationAPI:
 
     DEFAULT_VOICE_SESSION_TIMEOUT_S: int = 30
 
-    def __init__(self, loop: AbstractEventLoop):
+    def __init__(self, loop: AbstractEventLoop | None = None):
         """
         Create an integration driver API instance.
 
-        :param loop: event loop
+        :param loop: optional event loop. The currently running event loop is used if
+                     not provided.
         """
-        self._loop = loop
+        self._loop = loop if loop else asyncio.get_event_loop()
         self._events = AsyncIOEventEmitter(self._loop)
 
         self._setup_handler: uc.SetupHandler | None = None
