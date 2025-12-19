@@ -9,10 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
-### Changed
-- Optional event loop argument in IntegrationAPI constructor.
-
 ---
+
+## v0.5.1 - 2025-12-19
+### Added
+- Add binary sensor device class and common entity states enum ([#40](https://github.com/unfoldedcircle/integration-python-library/pull/40)).
+
+### Changed
+- Optional event loop argument in IntegrationAPI constructor ([#41](https://github.com/unfoldedcircle/integration-python-library/pull/41)).
 
 ## v0.5.0 - 2025-12-17
 ### Breaking Changes
