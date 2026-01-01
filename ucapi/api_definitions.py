@@ -205,6 +205,7 @@ class SetupComplete(SetupAction):
 
 
 CommandHandler: TypeAlias = Callable[
+    [Any, str, dict[str, Any] | None], Awaitable[StatusCodes] |
     [Any, str, dict[str, Any] | None, Any | None], Awaitable[StatusCodes]
 ]
 """Entity command handler signature.
