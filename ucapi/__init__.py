@@ -44,6 +44,7 @@ from .cover import Cover  # noqa: F401
 from .light import Light  # noqa: F401
 from .media_player import MediaPlayer  # noqa: F401
 from .remote import Remote  # noqa: F401
+from .select import Select  # noqa: F401
 from .sensor import Sensor  # noqa: F401
 from .switch import Switch  # noqa: F401
 from .voice_assistant import VoiceAssistant  # noqa: F401

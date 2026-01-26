@@ -25,6 +25,7 @@ class EntityTypes(str, Enum):
     LIGHT = "light"
     MEDIA_PLAYER = "media_player"
     REMOTE = "remote"
+    SELECT = "select"
     SENSOR = "sensor"
     SWITCH = "switch"
     IR_EMITTER = "ir_emitter"
