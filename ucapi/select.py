@@ -73,10 +73,7 @@ class Select(Entity):
 
         :param identifier: entity identifier
         :param name: friendly name
-        :param features: select features
         :param attributes: select attributes
-        :param device_class: optional select device class
-        :param options: options
         :param area: optional area
         :param cmd_handler: handler for entity commands
         """
