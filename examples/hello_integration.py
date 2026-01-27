@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Hello world integration example. Bare minimum of an integration driver."""
+
 import asyncio
 import logging
 from typing import Any

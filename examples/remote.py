@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Remote entity integration example. Bare minimum of an integration driver."""
+
 import asyncio
 import json
 import logging
