@@ -63,10 +63,8 @@ class Select(Entity):
         self,
         identifier: str,
         name: str | dict[str, str],
-        features: list[Features],
         attributes: dict[str, Any],
-        device_class: DeviceClasses | None = None,
-        options: dict[str, Any] | None = None,
+        *,
         area: str | None = None,
         cmd_handler: CommandHandler = None,
     ):
@@ -86,10 +84,8 @@ class Select(Entity):
             identifier,
             name,
             EntityTypes.SELECT,
-            features,
+            [],
             attributes,
-            device_class=device_class,
-            options=options,
             area=area,
             cmd_handler=cmd_handler,
         )
