@@ -3,6 +3,7 @@ name: Check Python code formatting
 on:
   push:
     paths:
+      - 'examples/**'
       - 'ucapi/**'
       - 'requirements.txt'
       - 'test-requirements.txt'
