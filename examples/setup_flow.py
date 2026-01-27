@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Integration setup flow example."""
+
 import asyncio
 import logging
 from typing import Any
