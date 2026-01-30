@@ -11,6 +11,11 @@ _Changes in the next release_
 
 ---
 
+## v0.5.2 - 2026-01-30
+### Added
+- Add Select Entity support by @JackJPowell ([#44](https://github.com/unfoldedcircle/integration-python-library/pull/44)).
+- Add IR Emitter Entity support by @JackJPowell ([#45](https://github.com/unfoldedcircle/integration-python-library/pull/45)).
+
 ## v0.5.1 - 2025-12-19
 ### Added
 - Add binary sensor device class and common entity states enum ([#40](https://github.com/unfoldedcircle/integration-python-library/pull/40)).
