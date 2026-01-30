@@ -24,7 +24,6 @@ class Features(str, Enum):
     """IR Emitter entity features."""
 
     SEND_IR = "send_ir"
-    LEARN_IR = "learn_ir"
 
 
 class Attributes(str, Enum):
@@ -38,8 +37,6 @@ class Commands(str, Enum):
 
     SEND_IR = "send_ir"
     STOP_IR = "stop_ir"
-    START_LEARN = "start_learn"
-    STOP_LEARN = "stop_learn"
 
 
 class DeviceClasses(str, Enum):
@@ -68,8 +65,8 @@ class IREmitter(Entity):
         name: str | dict[str, str],
         features: list[Features],
         attributes: dict[str, Any],
-        options: dict[str, Any] | None = None,
         *,
+        options: dict[str, Any] | None = None,
         area: str | None = None,
         cmd_handler: CommandHandler = None,
     ):
