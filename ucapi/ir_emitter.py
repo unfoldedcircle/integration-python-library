@@ -78,8 +78,8 @@ class IREmitter(Entity):
 
         :param identifier: entity identifier
         :param name: friendly name
-        :param attributes: IR Emitter attributes
         :param features: IR Emitter features
+        :param attributes: IR Emitter attributes
         :param options: IR Emitter options
         :param area: optional area
         :param cmd_handler: handler for entity commands
