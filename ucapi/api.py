@@ -98,6 +98,8 @@ class IntegrationAPI:
         self._available_entities = Entities("available", self._loop)
         self._configured_entities = Entities("configured", self._loop)
 
+        self._req_id = 1  # Request ID counter for outgoing requests
+
         self._voice_handler: VoiceStreamHandler | None = None
         self._voice_session_timeout: int = self.DEFAULT_VOICE_SESSION_TIMEOUT_S
         # Active voice sessions
@@ -1155,6 +1157,54 @@ class IntegrationAPI:
         :param event: the event
         """
         self._events.remove_all_listeners(event)
+
+    async def get_supported_entity_types(self, websocket=None):
+        """Send get_supported_entity_types request and wait for response."""
+        if websocket is None:
+            if not self._clients:
+                raise RuntimeError("No active websocket connection!")
+            websocket = next(iter(self._clients))
+        req_id = self._req_id
+        self._req_id += 1
+        request = {"kind": "req", "id": req_id, "msg": "get_supported_entity_types"}
+        await websocket.send(json.dumps(request))
+        while True:
+            response = await websocket.recv()
+            data = json.loads(response)
+            if data.get("kind") == "resp" and data.get("req_id") == req_id and data.get("msg") == "supported_entity_types":
+                return data.get("msg_data")
+
+    async def get_version(self, websocket=None):
+        """Send get_version request and wait for response."""
+        if websocket is None:
+            if not self._clients:
+                raise RuntimeError("No active websocket connection!")
+            websocket = next(iter(self._clients))
+        req_id = self._req_id
+        self._req_id += 1
+        request = {"kind": "req", "id": req_id, "msg": "get_version"}
+        await websocket.send(json.dumps(request))
+        while True:
+            response = await websocket.recv()
+            data = json.loads(response)
+            if data.get("kind") == "resp" and data.get("req_id") == req_id and data.get("msg") == "version":
+                return data.get("msg_data")
+
+    async def get_localization_cfg(self, websocket=None):
+        """Send get_localization_cfg request and wait for response."""
+        if websocket is None:
+            if not self._clients:
+                raise RuntimeError("No active websocket connection!")
+            websocket = next(iter(self._clients))
+        req_id = self._req_id
+        self._req_id += 1
+        request = {"kind": "req", "id": req_id, "msg": "get_localization_cfg"}
+        await websocket.send(json.dumps(request))
+        while True:
+            response = await websocket.recv()
+            data = json.loads(response)
+            if data.get("kind") == "resp" and data.get("req_id") == req_id and data.get("msg") == "localization_cfg":
+                return data.get("msg_data")
 
     ##############
     # Properties #
