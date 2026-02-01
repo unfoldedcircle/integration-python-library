@@ -520,10 +520,11 @@ class IntegrationAPI:
             return resp
 
         except asyncio.TimeoutError as ex:
-            raise TimeoutError(
-                f"Timeout waiting for response to '{msg}' (req_id={req_id})"
-            ) from ex
-
+            _LOG.error(
+                f"[%s] Timeout waiting for response to '{msg}' (req_id={req_id})",
+                websocket.remote_address,
+                ex,
+            )
         finally:
             # Cleanup pending future entry
             pending = self._ws_pending.get(websocket)
