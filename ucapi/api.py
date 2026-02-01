@@ -27,6 +27,7 @@ from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 from . import api_definitions as uc
+from .api_definitions import LocalizationCfg, Version
 from .entities import Entities
 from .entity import EntityTypes
 from .media_player import Attributes as MediaAttr
@@ -106,6 +107,13 @@ class IntegrationAPI:
         self._voice_sessions: dict[VoiceSessionKey, _VoiceSessionContext] = {}
         # Enforce: at most one active session per entity_id (across all websockets)
         self._voice_session_by_entity: dict[str, VoiceSessionKey] = {}
+
+        # One receiver per websocket (already in _handle_ws). Responses are dispatched to futures here.
+        self._ws_pending: dict[Any, dict[int, asyncio.Future]] = {}
+        self._ws_send_locks: dict[Any, asyncio.Lock] = {}
+        self._req_id_lock = asyncio.Lock()
+
+        self._supported_entity_types: list[EntityTypes] | None = None
 
         # Setup event loop
         asyncio.set_event_loop(self._loop)
@@ -209,10 +217,16 @@ class IntegrationAPI:
     async def _handle_ws(self, websocket) -> None:
         try:
             self._clients.add(websocket)
+            # Init per-websocket pending requests map + send lock
+            self._ws_pending[websocket] = {}
+            self._ws_send_locks[websocket] = asyncio.Lock()
             _LOG.info("WS: Client added: %s", websocket.remote_address)
 
             # authenticate on connection
             await self._authenticate(websocket, True)
+
+            # Request supported entity types from remote
+            asyncio.create_task(self._update_supported_entity_types(websocket))
 
             self._events.emit(uc.Events.CLIENT_CONNECTED)
 
@@ -263,7 +277,12 @@ class IntegrationAPI:
                         key[1],
                         ex,
                     )
-
+            # Cancel all pending requests for this websocket (client disconnected)
+            pending = self._ws_pending.pop(websocket, {})
+            for _, fut in pending.items():
+                if not fut.done():
+                    fut.set_exception(ConnectionError("WebSocket disconnected"))
+            self._ws_send_locks.pop(websocket, None)
             self._clients.remove(websocket)
             _LOG.info("[%s] WS: Client removed", websocket.remote_address)
             self._events.emit(uc.Events.CLIENT_DISCONNECTED)
@@ -414,6 +433,102 @@ class IntegrationAPI:
                 await self._handle_ws_request_msg(websocket, msg, req_id, msg_data)
         elif kind == "event":
             await self._handle_ws_event_msg(msg, msg_data)
+        elif kind == "resp":
+            # Response to a previously sent request
+            # Some implementations use "req_id", others use "id"
+            resp_id = data.get("req_id", data.get("id"))
+            if resp_id is None:
+                _LOG.warning(
+                    "[%s] WS: Received resp without req_id/id: %s",
+                    websocket.remote_address,
+                    message,
+                )
+                return
+
+            pending = self._ws_pending.get(websocket)
+            if not pending:
+                _LOG.debug(
+                    "[%s] WS: No pending map for resp_id=%s (late resp?)",
+                    websocket.remote_address,
+                    resp_id,
+                )
+                return
+            fut = pending.get(int(resp_id))
+            if fut is None:
+                _LOG.debug(
+                    "[%s] WS: Unmatched resp_id=%s (not pending). msg=%s",
+                    websocket.remote_address,
+                    resp_id,
+                    msg,
+                )
+                return
+
+            if not fut.done():
+                fut.set_result(data)
+
+    async def _ws_request(
+        self,
+        websocket,
+        msg: str,
+        msg_data: dict[str, Any] | None = None,
+        *,
+        timeout: float = 10.0,
+    ) -> dict[str, Any]:
+        """
+        Send a request over websocket and await the matching response.
+
+        - Uses a Future stored in self._ws_pending[websocket][req_id]
+        - Reader task (_handle_ws -> _process_ws_message) completes the future on 'resp'
+        - Raises TimeoutError on timeout
+        """
+        if websocket is None:
+            if not self._clients:
+                raise RuntimeError("No active websocket connection!")
+            websocket = next(iter(self._clients))
+
+        # Ensure per-socket structures exist (in case you call before _handle_ws init)
+        if websocket not in self._ws_pending:
+            self._ws_pending[websocket] = {}
+        if websocket not in self._ws_send_locks:
+            self._ws_send_locks[websocket] = asyncio.Lock()
+
+        # Allocate req_id safely
+        async with self._req_id_lock:
+            req_id = self._req_id
+            self._req_id += 1
+
+        fut = self._loop.create_future()
+        self._ws_pending[websocket][req_id] = fut
+
+        try:
+            payload: dict[str, Any] = {"kind": "req", "id": req_id, "msg": msg}
+            if msg_data is not None:
+                payload["msg_data"] = msg_data
+
+            if _LOG.isEnabledFor(logging.DEBUG):
+                _LOG.debug(
+                    "[%s] ->: %s",
+                    websocket.remote_address,
+                    filter_log_msg_data(payload),
+                )
+            # Serialize sends to avoid interleaving issues (optional but recommended)
+            async with self._ws_send_locks[websocket]:
+                await websocket.send(json.dumps(payload))
+
+            # Await response
+            resp = await asyncio.wait_for(fut, timeout=timeout)
+            return resp
+
+        except asyncio.TimeoutError as ex:
+            raise TimeoutError(
+                f"Timeout waiting for response to '{msg}' (req_id={req_id})"
+            ) from ex
+
+        finally:
+            # Cleanup pending future entry
+            pending = self._ws_pending.get(websocket)
+            if pending:
+                pending.pop(req_id, None)
 
     async def _process_ws_binary_message(self, websocket, data: bytes) -> None:
         """Process a binary WebSocket message using protobuf IntegrationMessage.
@@ -694,12 +809,11 @@ class IntegrationAPI:
                 {"state": self.device_state},
             )
         elif msg == uc.WsMessages.GET_AVAILABLE_ENTITIES:
-            available_entities = self._available_entities.get_all()
             await self._send_ws_response(
                 websocket,
                 req_id,
                 uc.WsMsgEvents.AVAILABLE_ENTITIES,
-                {"available_entities": available_entities},
+                {"available_entities": self._available_entities.get_all()},
             )
         elif msg == uc.WsMessages.GET_ENTITY_STATES:
             entity_states = await self._configured_entities.get_states()
@@ -1158,53 +1272,77 @@ class IntegrationAPI:
         """
         self._events.remove_all_listeners(event)
 
-    async def get_supported_entity_types(self, websocket=None):
-        """Send get_supported_entity_types request and wait for response."""
-        if websocket is None:
-            if not self._clients:
-                raise RuntimeError("No active websocket connection!")
-            websocket = next(iter(self._clients))
-        req_id = self._req_id
-        self._req_id += 1
-        request = {"kind": "req", "id": req_id, "msg": "get_supported_entity_types"}
-        await websocket.send(json.dumps(request))
-        while True:
-            response = await websocket.recv()
-            data = json.loads(response)
-            if data.get("kind") == "resp" and data.get("req_id") == req_id and data.get("msg") == "supported_entity_types":
-                return data.get("msg_data")
+    async def get_supported_entity_types(
+        self, websocket=None, *, timeout: float = 5.0
+    ) -> list[EntityTypes]:
+        """Request supported entity types from client and return msg_data."""
+        resp = await self._ws_request(
+            websocket,
+            "get_supported_entity_types",
+            timeout=timeout,
+        )
+        if resp.get("msg") != "supported_entity_types":
+            _LOG.debug(
+                "[%s] Unexpected resp msg for get_supported_entity_types: %s",
+                websocket.remote_address if websocket else "",
+                resp.get("msg"),
+            )
+        entity_types: list[EntityTypes] = []
+        for entity_type in resp.get("msg_data", []):
+            try:
+                entity_types.append(EntityTypes(entity_type))
+            except ValueError:
+                pass
+        return entity_types
 
-    async def get_version(self, websocket=None):
-        """Send get_version request and wait for response."""
-        if websocket is None:
-            if not self._clients:
-                raise RuntimeError("No active websocket connection!")
-            websocket = next(iter(self._clients))
-        req_id = self._req_id
-        self._req_id += 1
-        request = {"kind": "req", "id": req_id, "msg": "get_version"}
-        await websocket.send(json.dumps(request))
-        while True:
-            response = await websocket.recv()
-            data = json.loads(response)
-            if data.get("kind") == "resp" and data.get("req_id") == req_id and data.get("msg") == "version":
-                return data.get("msg_data")
+    async def _update_supported_entity_types(
+        self, websocket=None, *, timeout: float = 5.0
+    ) -> None:
+        """Update supported entity types by remote."""
+        await asyncio.sleep(0)
+        self._supported_entity_types = await self.get_supported_entity_types(
+            websocket, timeout=timeout
+        )
+        _LOG.debug(
+            "[%s] Supported entity types %s",
+            websocket.remote_address if websocket else "",
+            self._supported_entity_types,
+        )
 
-    async def get_localization_cfg(self, websocket=None):
-        """Send get_localization_cfg request and wait for response."""
-        if websocket is None:
-            if not self._clients:
-                raise RuntimeError("No active websocket connection!")
-            websocket = next(iter(self._clients))
-        req_id = self._req_id
-        self._req_id += 1
-        request = {"kind": "req", "id": req_id, "msg": "get_localization_cfg"}
-        await websocket.send(json.dumps(request))
-        while True:
-            response = await websocket.recv()
-            data = json.loads(response)
-            if data.get("kind") == "resp" and data.get("req_id") == req_id and data.get("msg") == "localization_cfg":
-                return data.get("msg_data")
+    async def get_version(self, websocket=None, *, timeout: float = 5.0) -> Version:
+        """Request client version and return msg_data."""
+        resp = await self._ws_request(
+            websocket,
+            "get_version",
+            timeout=timeout,
+        )
+        if resp.get("msg") != "version":
+            _LOG.debug(
+                "[%s] Unexpected resp msg for get_version: %s",
+                websocket.remote_address if websocket else "",
+                resp.get("msg"),
+            )
+
+        return resp.get("msg_data")
+
+    async def get_localization_cfg(
+        self, websocket=None, *, timeout: float = 5.0
+    ) -> LocalizationCfg:
+        """Request localization config and return msg_data."""
+        resp = await self._ws_request(
+            websocket,
+            "get_localization_cfg",
+            timeout=timeout,
+        )
+
+        if resp.get("msg") != "localization_cfg":
+            _LOG.debug(
+                "[%s] Unexpected resp msg for get_localization_cfg: %s",
+                websocket.remote_address if websocket else "",
+                resp.get("msg"),
+            )
+
+        return resp.get("msg_data")
 
     ##############
     # Properties #
