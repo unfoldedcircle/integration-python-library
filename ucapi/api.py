@@ -521,8 +521,10 @@ class IntegrationAPI:
 
         except asyncio.TimeoutError as ex:
             _LOG.error(
-                f"[%s] Timeout waiting for response to '{msg}' (req_id={req_id})",
+                "[%s] Timeout waiting for response to %s (req_id=%s)",
                 websocket.remote_address,
+                msg,
+                req_id,
                 ex,
             )
         finally:
@@ -1301,14 +1303,21 @@ class IntegrationAPI:
     ) -> None:
         """Update supported entity types by remote."""
         await asyncio.sleep(0)
-        self._supported_entity_types = await self.get_supported_entity_types(
-            websocket, timeout=timeout
-        )
-        _LOG.debug(
-            "[%s] Supported entity types %s",
-            websocket.remote_address if websocket else "",
-            self._supported_entity_types,
-        )
+        try:
+            self._supported_entity_types = await self.get_supported_entity_types(
+                websocket, timeout=timeout
+            )
+            _LOG.debug(
+                "[%s] Supported entity types %s",
+                websocket.remote_address if websocket else "",
+                self._supported_entity_types,
+            )
+        except Exception as ex:
+            _LOG.error(
+                "[%s] Unable to retrieve entity types %s",
+                websocket.remote_address if websocket else "",
+                ex
+            )
 
     async def get_version(self, websocket=None, *, timeout: float = 5.0) -> Version:
         """Request client version and return msg_data."""
