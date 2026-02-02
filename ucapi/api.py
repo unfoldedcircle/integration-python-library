@@ -521,12 +521,13 @@ class IntegrationAPI:
 
         except asyncio.TimeoutError as ex:
             _LOG.error(
-                "[%s] Timeout waiting for response to %s (req_id=%s)",
+                "[%s] Timeout waiting for response to %s (req_id=%s) %s",
                 websocket.remote_address,
                 msg,
                 req_id,
                 ex,
             )
+            raise ex
         finally:
             # Cleanup pending future entry
             pending = self._ws_pending.get(websocket)
@@ -1312,11 +1313,11 @@ class IntegrationAPI:
                 websocket.remote_address if websocket else "",
                 self._supported_entity_types,
             )
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=W0718
             _LOG.error(
                 "[%s] Unable to retrieve entity types %s",
                 websocket.remote_address if websocket else "",
-                ex
+                ex,
             )
 
     async def get_version(self, websocket=None, *, timeout: float = 5.0) -> Version:
