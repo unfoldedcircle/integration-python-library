@@ -234,10 +234,12 @@ class IntegrationAPI:
                 # Distinguish between text (str) and binary (bytes-like) messages
                 if isinstance(message, str):
                     # JSON text message
-                    await self._process_ws_message(websocket, message)
+                    asyncio.create_task(self._process_ws_message(websocket, message))
                 elif isinstance(message, (bytes, bytearray, memoryview)):
                     # Binary message (protobuf in future)
-                    await self._process_ws_binary_message(websocket, bytes(message))
+                    asyncio.create_task(
+                        self._process_ws_binary_message(websocket, bytes(message))
+                    )
                 else:
                     _LOG.warning(
                         "[%s] WS: Unsupported message type %s",
@@ -480,6 +482,10 @@ class IntegrationAPI:
         - Uses a Future stored in self._ws_pending[websocket][req_id]
         - Reader task (_handle_ws -> _process_ws_message) completes the future on 'resp'
         - Raises TimeoutError on timeout
+        :param websocket: client connection
+        :param msg: event message name
+        :param msg_data: message data payload
+        :param timeout: timeout for message
         """
         if websocket is None:
             if not self._clients:
