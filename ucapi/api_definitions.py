@@ -302,28 +302,3 @@ class AssistantEvent:
     entity_id: str
     session_id: int
     data: AssistantEventData | None = None
-
-
-@dataclass
-class Version:
-    """Version response payload sent via the ``get_version`` request."""
-
-    model: str
-    device_name: str
-    hostname: str
-    address: str
-    api: str
-    core: str
-    ui: str
-    os: str
-
-
-@dataclass
-class LocalizationCfg:
-    """Localization response payload sent via the ``get_localization_cfg`` request."""
-
-    language_code: str
-    country_code: str
-    time_zone: str
-    time_format_24h: bool
-    measurement_unit: str

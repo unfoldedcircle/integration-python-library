@@ -1326,7 +1326,9 @@ class IntegrationAPI:
                 ex,
             )
 
-    async def get_version(self, websocket=None, *, timeout: float = 5.0) -> Version:
+    async def get_version(
+        self, websocket=None, *, timeout: float = 5.0
+    ) -> dict[str, Any]:
         """Request client version and return msg_data."""
         resp = await self._ws_request(
             websocket,
@@ -1344,7 +1346,7 @@ class IntegrationAPI:
 
     async def get_localization_cfg(
         self, websocket=None, *, timeout: float = 5.0
-    ) -> LocalizationCfg:
+    ) -> dict[str, Any]:
         """Request localization config and return msg_data."""
         resp = await self._ws_request(
             websocket,
