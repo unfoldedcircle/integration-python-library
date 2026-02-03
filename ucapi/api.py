@@ -818,11 +818,18 @@ class IntegrationAPI:
                 {"state": self.device_state},
             )
         elif msg == uc.WsMessages.GET_AVAILABLE_ENTITIES:
+            available_entities = self._available_entities.get_all()
+            if self._supported_entity_types:
+                available_entities = [
+                    entity
+                    for entity in available_entities
+                    if entity.get("entity_type") in self._supported_entity_types
+                ]
             await self._send_ws_response(
                 websocket,
                 req_id,
                 uc.WsMsgEvents.AVAILABLE_ENTITIES,
-                {"available_entities": self._available_entities.get_all()},
+                {"available_entities": available_entities},
             )
         elif msg == uc.WsMessages.GET_ENTITY_STATES:
             entity_states = await self._configured_entities.get_states()
