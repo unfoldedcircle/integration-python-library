@@ -27,7 +27,6 @@ from zeroconf import IPVersion
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 from . import api_definitions as uc
-from .api_definitions import LocalizationCfg, Version
 from .entities import Entities
 from .entity import EntityTypes
 from .media_player import Attributes as MediaAttr
