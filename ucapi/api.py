@@ -112,7 +112,7 @@ class IntegrationAPI:
         self._ws_send_locks: dict[Any, asyncio.Lock] = {}
         self._req_id_lock = asyncio.Lock()
 
-        self._supported_entity_types: list[EntityTypes] | None = None
+        self._supported_entity_types: list[str] | None = None
 
         # Setup event loop
         asyncio.set_event_loop(self._loop)
@@ -223,9 +223,6 @@ class IntegrationAPI:
 
             # authenticate on connection
             await self._authenticate(websocket, True)
-
-            # Request supported entity types from remote
-            asyncio.create_task(self._update_supported_entity_types(websocket))
 
             self._events.emit(uc.Events.CLIENT_CONNECTED)
 
@@ -819,6 +816,9 @@ class IntegrationAPI:
             )
         elif msg == uc.WsMessages.GET_AVAILABLE_ENTITIES:
             available_entities = self._available_entities.get_all()
+            if self._supported_entity_types is None:
+                # Request supported entity types from remote
+                await self._update_supported_entity_types(websocket)
             if self._supported_entity_types:
                 available_entities = [
                     entity
@@ -1290,7 +1290,7 @@ class IntegrationAPI:
 
     async def get_supported_entity_types(
         self, websocket=None, *, timeout: float = 5.0
-    ) -> list[EntityTypes]:
+    ) -> list[str]:
         """Request supported entity types from client and return msg_data."""
         resp = await self._ws_request(
             websocket,
@@ -1303,13 +1303,7 @@ class IntegrationAPI:
                 websocket.remote_address if websocket else "",
                 resp.get("msg"),
             )
-        entity_types: list[EntityTypes] = []
-        for entity_type in resp.get("msg_data", []):
-            try:
-                entity_types.append(EntityTypes(entity_type))
-            except ValueError:
-                pass
-        return entity_types
+        return resp.get("msg_data", [])
 
     async def _update_supported_entity_types(
         self, websocket=None, *, timeout: float = 5.0
