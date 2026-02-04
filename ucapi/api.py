@@ -800,6 +800,7 @@ class IntegrationAPI:
     async def _handle_ws_request_msg(
         self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None
     ) -> None:
+        # pylint: disable=R0912
         if msg == uc.WsMessages.GET_DRIVER_VERSION:
             await self._send_ws_response(
                 websocket,
