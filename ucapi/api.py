@@ -98,12 +98,19 @@ class IntegrationAPI:
         self._available_entities = Entities("available", self._loop)
         self._configured_entities = Entities("configured", self._loop)
 
+        self._req_id = 1  # Request ID counter for outgoing requests
+
         self._voice_handler: VoiceStreamHandler | None = None
         self._voice_session_timeout: int = self.DEFAULT_VOICE_SESSION_TIMEOUT_S
         # Active voice sessions
         self._voice_sessions: dict[VoiceSessionKey, _VoiceSessionContext] = {}
         # Enforce: at most one active session per entity_id (across all websockets)
         self._voice_session_by_entity: dict[str, VoiceSessionKey] = {}
+
+        # One receiver per websocket (already in _handle_ws). Responses are dispatched to futures here.
+        self._ws_pending: dict[Any, dict[int, asyncio.Future]] = {}
+
+        self._supported_entity_types: list[str] | None = None
 
         # Setup event loop
         asyncio.set_event_loop(self._loop)
@@ -207,6 +214,8 @@ class IntegrationAPI:
     async def _handle_ws(self, websocket) -> None:
         try:
             self._clients.add(websocket)
+            # Init per-websocket pending requests map + send lock
+            self._ws_pending[websocket] = {}
             _LOG.info("WS: Client added: %s", websocket.remote_address)
 
             # authenticate on connection
@@ -218,10 +227,12 @@ class IntegrationAPI:
                 # Distinguish between text (str) and binary (bytes-like) messages
                 if isinstance(message, str):
                     # JSON text message
-                    await self._process_ws_message(websocket, message)
+                    asyncio.create_task(self._process_ws_message(websocket, message))
                 elif isinstance(message, (bytes, bytearray, memoryview)):
                     # Binary message (protobuf in future)
-                    await self._process_ws_binary_message(websocket, bytes(message))
+                    asyncio.create_task(
+                        self._process_ws_binary_message(websocket, bytes(message))
+                    )
                 else:
                     _LOG.warning(
                         "[%s] WS: Unsupported message type %s",
@@ -261,7 +272,11 @@ class IntegrationAPI:
                         key[1],
                         ex,
                     )
-
+            # Cancel all pending requests for this websocket (client disconnected)
+            pending = self._ws_pending.pop(websocket, {})
+            for _, fut in pending.items():
+                if not fut.done():
+                    fut.set_exception(ConnectionError("WebSocket disconnected"))
             self._clients.remove(websocket)
             _LOG.info("[%s] WS: Client removed", websocket.remote_address)
             self._events.emit(uc.Events.CLIENT_DISCONNECTED)
@@ -412,6 +427,100 @@ class IntegrationAPI:
                 await self._handle_ws_request_msg(websocket, msg, req_id, msg_data)
         elif kind == "event":
             await self._handle_ws_event_msg(msg, msg_data)
+        elif kind == "resp":
+            # Response to a previously sent request
+            # Some implementations use "req_id", others use "id"
+            resp_id = data.get("req_id", data.get("id"))
+            if resp_id is None:
+                _LOG.warning(
+                    "[%s] WS: Received resp without req_id/id: %s",
+                    websocket.remote_address,
+                    message,
+                )
+                return
+
+            pending = self._ws_pending.get(websocket)
+            if not pending:
+                _LOG.debug(
+                    "[%s] WS: No pending map for resp_id=%s (late resp?)",
+                    websocket.remote_address,
+                    resp_id,
+                )
+                return
+            fut = pending.get(int(resp_id))
+            if fut is None:
+                _LOG.debug(
+                    "[%s] WS: Unmatched resp_id=%s (not pending). msg=%s",
+                    websocket.remote_address,
+                    resp_id,
+                    msg,
+                )
+                return
+
+            if not fut.done():
+                fut.set_result(data)
+
+    async def _ws_request(
+        self,
+        websocket,
+        msg: str,
+        msg_data: dict[str, Any] | None = None,
+        *,
+        timeout: float = 10.0,
+    ) -> dict[str, Any]:
+        """
+        Send a request over websocket and await the matching response.
+
+        - Uses a Future stored in self._ws_pending[websocket][req_id]
+        - Reader task (_handle_ws -> _process_ws_message) completes the future on 'resp'
+        - Raises TimeoutError on timeout
+        :param websocket: client connection
+        :param msg: event message name
+        :param msg_data: message data payload
+        :param timeout: timeout for message
+        """
+        # Ensure per-socket structures exist (in case you call before _handle_ws init)
+        if websocket not in self._ws_pending:
+            self._ws_pending[websocket] = {}
+
+        # Allocate req_id safely
+        req_id = self._req_id
+        self._req_id += 1
+
+        fut = self._loop.create_future()
+        self._ws_pending[websocket][req_id] = fut
+
+        try:
+            payload: dict[str, Any] = {"kind": "req", "id": req_id, "msg": msg}
+            if msg_data is not None:
+                payload["msg_data"] = msg_data
+
+            if _LOG.isEnabledFor(logging.DEBUG):
+                _LOG.debug(
+                    "[%s] ->: %s",
+                    websocket.remote_address,
+                    filter_log_msg_data(payload),
+                )
+            await websocket.send(json.dumps(payload))
+
+            # Await response
+            resp = await asyncio.wait_for(fut, timeout=timeout)
+            return resp
+
+        except asyncio.TimeoutError as ex:
+            _LOG.error(
+                "[%s] Timeout waiting for response to %s (req_id=%s) %s",
+                websocket.remote_address,
+                msg,
+                req_id,
+                ex,
+            )
+            raise ex
+        finally:
+            # Cleanup pending future entry
+            pending = self._ws_pending.get(websocket)
+            if pending:
+                pending.pop(req_id, None)
 
     async def _process_ws_binary_message(self, websocket, data: bytes) -> None:
         """Process a binary WebSocket message using protobuf IntegrationMessage.
@@ -677,6 +786,7 @@ class IntegrationAPI:
     async def _handle_ws_request_msg(
         self, websocket, msg: str, req_id: int, msg_data: dict[str, Any] | None
     ) -> None:
+        # pylint: disable=R0912
         if msg == uc.WsMessages.GET_DRIVER_VERSION:
             await self._send_ws_response(
                 websocket,
@@ -693,6 +803,15 @@ class IntegrationAPI:
             )
         elif msg == uc.WsMessages.GET_AVAILABLE_ENTITIES:
             available_entities = self._available_entities.get_all()
+            if self._supported_entity_types is None:
+                # Request supported entity types from remote
+                await self._update_supported_entity_types(websocket)
+            if self._supported_entity_types:
+                available_entities = [
+                    entity
+                    for entity in available_entities
+                    if entity.get("entity_type") in self._supported_entity_types
+                ]
             await self._send_ws_response(
                 websocket,
                 req_id,
@@ -1155,6 +1274,79 @@ class IntegrationAPI:
         :param event: the event
         """
         self._events.remove_all_listeners(event)
+
+    async def get_supported_entity_types(
+        self, websocket, *, timeout: float = 5.0
+    ) -> list[str]:
+        """Request supported entity types from client and return msg_data."""
+        resp = await self._ws_request(
+            websocket,
+            "get_supported_entity_types",
+            timeout=timeout,
+        )
+        if resp.get("msg") != "supported_entity_types":
+            _LOG.debug(
+                "[%s] Unexpected resp msg for get_supported_entity_types: %s",
+                websocket.remote_address,
+                resp.get("msg"),
+            )
+        return resp.get("msg_data", [])
+
+    async def _update_supported_entity_types(
+        self, websocket, *, timeout: float = 5.0
+    ) -> None:
+        """Update supported entity types by remote."""
+        await asyncio.sleep(0)
+        try:
+            self._supported_entity_types = await self.get_supported_entity_types(
+                websocket, timeout=timeout
+            )
+            _LOG.debug(
+                "[%s] Supported entity types %s",
+                websocket.remote_address,
+                self._supported_entity_types,
+            )
+        except Exception as ex:  # pylint: disable=W0718
+            _LOG.error(
+                "[%s] Unable to retrieve entity types %s",
+                websocket.remote_address,
+                ex,
+            )
+
+    async def get_version(self, websocket, *, timeout: float = 5.0) -> dict[str, Any]:
+        """Request client version and return msg_data."""
+        resp = await self._ws_request(
+            websocket,
+            "get_version",
+            timeout=timeout,
+        )
+        if resp.get("msg") != "version":
+            _LOG.debug(
+                "[%s] Unexpected resp msg for get_version: %s",
+                websocket.remote_address,
+                resp.get("msg"),
+            )
+
+        return resp.get("msg_data")
+
+    async def get_localization_cfg(
+        self, websocket, *, timeout: float = 5.0
+    ) -> dict[str, Any]:
+        """Request localization config and return msg_data."""
+        resp = await self._ws_request(
+            websocket,
+            "get_localization_cfg",
+            timeout=timeout,
+        )
+
+        if resp.get("msg") != "localization_cfg":
+            _LOG.debug(
+                "[%s] Unexpected resp msg for get_localization_cfg: %s",
+                websocket.remote_address,
+                resp.get("msg"),
+            )
+
+        return resp.get("msg_data")
 
     ##############
     # Properties #
