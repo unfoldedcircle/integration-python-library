@@ -479,7 +479,6 @@ class IntegrationAPI:
         :param msg_data: message data payload
         :param timeout: timeout for message
         """
-
         # Ensure per-socket structures exist (in case you call before _handle_ws init)
         if websocket not in self._ws_pending:
             self._ws_pending[websocket] = {}
