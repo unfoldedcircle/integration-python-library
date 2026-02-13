@@ -502,7 +502,6 @@ class IntegrationAPI:
                     websocket.remote_address,
                     filter_log_msg_data(payload),
                 )
-            # Serialize sends to avoid interleaving issues (optional but recommended)
             await websocket.send(json.dumps(payload))
 
             # Await response
