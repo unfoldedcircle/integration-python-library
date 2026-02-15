@@ -620,7 +620,7 @@ class IntegrationAPI:
                 session.end(VoiceEndReason.ERROR, ex)
         finally:
             # Ensure iterator is unblocked and session is cleaned up
-            await self._cleanup_voice_session(session.session_id)
+            await self._cleanup_voice_session(session.key)
 
     def _schedule_voice_timeout(self, key: VoiceSessionKey) -> None:
         """Schedule the timeout task for a voice session.
