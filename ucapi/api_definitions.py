@@ -81,25 +81,77 @@ class WsMsgEvents(str, Enum):
 
 
 class Events(str, Enum):
-    """Internal library events."""
+    """Internal library events.
+
+    All event parameters are named parameters and optional.
+    """
 
     CLIENT_CONNECTED = "client_connected"
-    """WebSocket client connected."""
+    """WebSocket client connected.
+
+    Named parameters:
+
+    - websocket: WebSocket client connection
+    """
     CLIENT_DISCONNECTED = "client_disconnected"
-    """WebSocket client disconnected."""
+    """WebSocket client disconnected.
+
+    Named parameters:
+
+    - websocket: WebSocket client connection
+    """
     ENTITY_ATTRIBUTES_UPDATED = "entity_attributes_updated"
+    """Entity attributes updated.
+
+    Named parameters:
+
+    - entity_id: entity identifier
+    - entity_type: entity type
+    - attributes: updated attributes"""
     SUBSCRIBE_ENTITIES = "subscribe_entities"
-    """Integration API `subscribe_events` message."""
+    """Integration API `subscribe_events` message.
+
+    Named parameters:
+
+    - entity_ids: list of entity IDs to subscribe to
+    - websocket: WebSocket client connection
+    """
     UNSUBSCRIBE_ENTITIES = "unsubscribe_entities"
-    """Integration API `unsubscribe_events` message."""
+    """Integration API `unsubscribe_events` message.
+
+    Named parameters:
+
+    - entity_ids: list of entity IDs to unsubscribe
+    - websocket: WebSocket client connection
+    """
     CONNECT = "connect"
-    """Integration-API `connect` event message."""
+    """Integration-API `connect` event message.
+
+    Named parameters:
+
+    - websocket: WebSocket client connection
+    """
     DISCONNECT = "disconnect"
-    """Integration-API `disconnect` event message."""
+    """Integration-API `disconnect` event message.
+
+    Named parameters:
+
+    - websocket: WebSocket client connection
+    """
     ENTER_STANDBY = "enter_standby"
-    """Integration-API `enter_standby` event message."""
+    """Integration-API `enter_standby` event message.
+
+    Named parameters:
+
+    - websocket: WebSocket client connection
+    """
     EXIT_STANDBY = "exit_standby"
-    """Integration-API `exit_standby` event message."""
+    """Integration-API `exit_standby` event message.
+
+    Named parameters:
+
+    - websocket: WebSocket client connection
+    """
 
 
 # Does EventCategory need to be public?
