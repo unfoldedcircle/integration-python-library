@@ -6,7 +6,7 @@ User interface definitions.
 """
 
 from dataclasses import KW_ONLY, dataclass
-from enum import Enum
+from enum import StrEnum
 
 
 @dataclass
@@ -17,7 +17,7 @@ class EntityCommand:
     params: dict[str, str | int | list[str]] | None = None
 
 
-class Buttons(str, Enum):
+class Buttons(StrEnum):
     """Physical buttons."""
 
     BACK = "BACK"

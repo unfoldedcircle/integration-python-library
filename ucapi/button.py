@@ -5,26 +5,26 @@ Button entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from .api_definitions import CommandHandler
 from .entity import Entity, EntityTypes
 
 
-class States(str, Enum):
+class States(StrEnum):
     """Button entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
     AVAILABLE = "AVAILABLE"
 
 
-class Attributes(str, Enum):
+class Attributes(StrEnum):
     """Button entity attributes."""
 
     STATE = "state"
 
 
-class Commands(str, Enum):
+class Commands(StrEnum):
     """Button entity commands."""
 
     PUSH = "push"

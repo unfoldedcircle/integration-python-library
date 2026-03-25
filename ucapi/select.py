@@ -5,14 +5,14 @@ Switch entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .api_definitions import CommandHandler
 from .entity import Entity, EntityTypes
 
 
-class States(str, Enum):
+class States(StrEnum):
     """Select entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -20,11 +20,11 @@ class States(str, Enum):
     ON = "ON"
 
 
-class Features(str, Enum):
+class Features(StrEnum):
     """Select entity features."""
 
 
-class Attributes(str, Enum):
+class Attributes(StrEnum):
     """Select entity attributes."""
 
     STATE = "state"
@@ -32,7 +32,7 @@ class Attributes(str, Enum):
     OPTIONS = "options"
 
 
-class Commands(str, Enum):
+class Commands(StrEnum):
     """Select entity commands."""
 
     SELECT_OPTION = "select_option"
@@ -42,11 +42,11 @@ class Commands(str, Enum):
     SELECT_PREVIOUS = "select_previous"
 
 
-class DeviceClasses(str, Enum):
+class DeviceClasses(StrEnum):
     """Select entity device classes."""
 
 
-class Options(str, Enum):
+class Options(StrEnum):
     """Select entity options."""
 
 

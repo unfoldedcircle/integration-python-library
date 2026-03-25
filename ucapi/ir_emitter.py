@@ -5,14 +5,14 @@ IR Emitter entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .api_definitions import CommandHandler
 from .entity import Entity, EntityTypes
 
 
-class States(str, Enum):
+class States(StrEnum):
     """IR Emitter entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -20,30 +20,30 @@ class States(str, Enum):
     ON = "ON"
 
 
-class Features(str, Enum):
+class Features(StrEnum):
     """IR Emitter entity features."""
 
     SEND_IR = "send_ir"
 
 
-class Attributes(str, Enum):
+class Attributes(StrEnum):
     """IR Emitter entity attributes."""
 
     STATE = "state"
 
 
-class Commands(str, Enum):
+class Commands(StrEnum):
     """IR Emitter entity commands."""
 
     SEND_IR = "send_ir"
     STOP_IR = "stop_ir"
 
 
-class DeviceClasses(str, Enum):
+class DeviceClasses(StrEnum):
     """IR Emitter entity device classes."""
 
 
-class Options(str, Enum):
+class Options(StrEnum):
     """IR Emitter entity options."""
 
     PORTS = "ports"

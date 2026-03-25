@@ -5,14 +5,14 @@ Cover entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .api_definitions import CommandHandler
 from .entity import Entity, EntityTypes
 
 
-class States(str, Enum):
+class States(StrEnum):
     """Cover entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -23,7 +23,7 @@ class States(str, Enum):
     CLOSED = "CLOSED"
 
 
-class Features(str, Enum):
+class Features(StrEnum):
     """Cover entity features."""
 
     OPEN = "open"
@@ -35,7 +35,7 @@ class Features(str, Enum):
     TILT_POSITION = "tilt_position"
 
 
-class Attributes(str, Enum):
+class Attributes(StrEnum):
     """Cover entity attributes."""
 
     STATE = "state"
@@ -43,7 +43,7 @@ class Attributes(str, Enum):
     TILT_POSITION = "tilt_position"
 
 
-class Commands(str, Enum):
+class Commands(StrEnum):
     """Cover entity commands."""
 
     OPEN = "open"
@@ -56,7 +56,7 @@ class Commands(str, Enum):
     TILT_STOP = "tilt_stop"
 
 
-class DeviceClasses(str, Enum):
+class DeviceClasses(StrEnum):
     """Cover entity device classes."""
 
     BLIND = "blind"
@@ -68,7 +68,7 @@ class DeviceClasses(str, Enum):
     WINDOW = "window"
 
 
-class Options(str, Enum):
+class Options(StrEnum):
     """Cover entity options."""
 
 

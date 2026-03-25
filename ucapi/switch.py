@@ -5,14 +5,14 @@ Switch entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .api_definitions import CommandHandler
 from .entity import Entity, EntityTypes
 
 
-class States(str, Enum):
+class States(StrEnum):
     """Switch entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -21,20 +21,20 @@ class States(str, Enum):
     OFF = "OFF"
 
 
-class Features(str, Enum):
+class Features(StrEnum):
     """Switch entity features."""
 
     ON_OFF = "on_off"
     TOGGLE = "toggle"
 
 
-class Attributes(str, Enum):
+class Attributes(StrEnum):
     """Switch entity attributes."""
 
     STATE = "state"
 
 
-class Commands(str, Enum):
+class Commands(StrEnum):
     """Switch entity commands."""
 
     ON = "on"
@@ -42,14 +42,14 @@ class Commands(str, Enum):
     TOGGLE = "toggle"
 
 
-class DeviceClasses(str, Enum):
+class DeviceClasses(StrEnum):
     """Switch entity device classes."""
 
     OUTLET = "outlet"
     SWITCH = "switch"
 
 
-class Options(str, Enum):
+class Options(StrEnum):
     """Switch entity options."""
 
     READABLE = "readable"

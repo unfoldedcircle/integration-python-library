@@ -5,13 +5,13 @@ Sensor entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .entity import Entity, EntityTypes
 
 
-class States(str, Enum):
+class States(StrEnum):
     """Sensor entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -23,11 +23,11 @@ class States(str, Enum):
     """The sensor is available and providing measurements."""
 
 
-class Features(str, Enum):
+class Features(StrEnum):
     """Sensor entity features."""
 
 
-class Attributes(str, Enum):
+class Attributes(StrEnum):
     """Sensor entity attributes."""
 
     STATE = "state"
@@ -38,11 +38,11 @@ class Attributes(str, Enum):
     """Optional unit of the ``value`` if no default unit is set."""
 
 
-class Commands(str, Enum):
+class Commands(StrEnum):
     """Sensor entity commands."""
 
 
-class DeviceClasses(str, Enum):
+class DeviceClasses(StrEnum):
     """Sensor entity device classes.
 
     See https://unfoldedcircle.github.io/core-api/entities/entity_sensor.html
@@ -69,7 +69,7 @@ class DeviceClasses(str, Enum):
      The binary specific device class is stored in the ``unit`` attribute."""
 
 
-class Options(str, Enum):
+class Options(StrEnum):
     """Sensor entity options."""
 
     CUSTOM_UNIT = "custom_unit"

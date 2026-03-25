@@ -5,14 +5,14 @@ Climate entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .api_definitions import CommandHandler
 from .entity import Entity, EntityTypes
 
 
-class States(str, Enum):
+class States(StrEnum):
     """Climate entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -25,7 +25,7 @@ class States(str, Enum):
     AUTO = "AUTO"
 
 
-class Features(str, Enum):
+class Features(StrEnum):
     """Climate entity features."""
 
     ON_OFF = "on_off"
@@ -37,7 +37,7 @@ class Features(str, Enum):
     FAN = "fan"
 
 
-class Attributes(str, Enum):
+class Attributes(StrEnum):
     """Climate entity attributes."""
 
     STATE = "state"
@@ -48,7 +48,7 @@ class Attributes(str, Enum):
     FAN_MODE = "fan_mode"
 
 
-class Commands(str, Enum):
+class Commands(StrEnum):
     """Climate entity commands."""
 
     ON = "on"
@@ -59,11 +59,11 @@ class Commands(str, Enum):
     FAN_MODE = "fan_mode"
 
 
-class DeviceClasses(str, Enum):
+class DeviceClasses(StrEnum):
     """Climate entity device classes."""
 
 
-class Options(str, Enum):
+class Options(StrEnum):
     """Climate entity options."""
 
     TEMPERATURE_UNIT = "temperature_unit"

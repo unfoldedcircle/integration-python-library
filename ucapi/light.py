@@ -5,14 +5,14 @@ Light entity definitions.
 :license: MPL-2.0, see LICENSE for more details.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .api_definitions import CommandHandler
 from .entity import Entity, EntityTypes
 
 
-class States(str, Enum):
+class States(StrEnum):
     """Light entity states."""
 
     UNAVAILABLE = "UNAVAILABLE"
@@ -21,7 +21,7 @@ class States(str, Enum):
     OFF = "OFF"
 
 
-class Features(str, Enum):
+class Features(StrEnum):
     """Light entity features."""
 
     ON_OFF = "on_off"
@@ -31,7 +31,7 @@ class Features(str, Enum):
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class Attributes(str, Enum):
+class Attributes(StrEnum):
     """Light entity attributes."""
 
     STATE = "state"
@@ -41,7 +41,7 @@ class Attributes(str, Enum):
     COLOR_TEMPERATURE = "color_temperature"
 
 
-class Commands(str, Enum):
+class Commands(StrEnum):
     """Light entity commands."""
 
     ON = "on"
@@ -49,11 +49,11 @@ class Commands(str, Enum):
     TOGGLE = "toggle"
 
 
-class DeviceClasses(str, Enum):
+class DeviceClasses(StrEnum):
     """Light entity device classes."""
 
 
-class Options(str, Enum):
+class Options(StrEnum):
     """Light entity options."""
 
     COLOR_TEMPERATURE_STEPS = "color_temperature_steps"

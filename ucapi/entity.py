@@ -7,7 +7,7 @@ Entity definitions.
 
 import inspect
 import logging
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .api_definitions import CommandHandler, StatusCodes
@@ -16,7 +16,7 @@ _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
 
 
-class EntityTypes(str, Enum):
+class EntityTypes(StrEnum):
     """Entity types."""
 
     COVER = "cover"
@@ -32,7 +32,7 @@ class EntityTypes(str, Enum):
     VOICE_ASSISTANT = "voice_assistant"
 
 
-class CommonStates(str, Enum):
+class CommonStates(StrEnum):
     """Common entity states available in all entities."""
 
     UNAVAILABLE = "UNAVAILABLE"
