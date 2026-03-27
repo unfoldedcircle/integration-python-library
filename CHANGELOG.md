@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Added
+- Media browsing and searching features to media-player entity.
+
+### Breaking Changes
+- Renamed `MediaType` to `MediaContentType` and changed enums to lowercase. See media-player entity documentation for more information.
+- Changed `str, Enum` to new Python 3.11 `StrEnum` class.
+
 ---
 
 ## v0.5.2 - 2026-01-30

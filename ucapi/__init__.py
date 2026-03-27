@@ -19,6 +19,8 @@ from .api_definitions import (  # isort:skip # noqa: F401
     DriverSetupRequest,
     Events,
     IntegrationSetupError,
+    Paging,
+    Pagination,
     RequestUserConfirmation,
     RequestUserInput,
     SetupAction,
@@ -42,7 +44,20 @@ from .button import Button  # noqa: F401
 from .climate import Climate  # noqa: F401
 from .cover import Cover  # noqa: F401
 from .light import Light  # noqa: F401
-from .media_player import MediaPlayer  # noqa: F401
+from .media_player import (  # noqa: F401
+    BrowseMediaItem,
+    BrowseOptions,
+    BrowseResults,
+    MediaClass,
+    MediaContentType,
+    MediaPlayAction,
+    MediaPlayer,
+    RepeatMode,
+    SearchMediaFilter,
+    SearchMediaItem,
+    SearchOptions,
+    SearchResults,
+)
 from .remote import Remote  # noqa: F401
 from .select import Select  # noqa: F401
 from .sensor import Sensor  # noqa: F401

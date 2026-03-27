@@ -16,6 +16,24 @@ _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.DEBUG)
 
 
+def validate_str(name: str, value: str, min_len: int = 1, max_len: int = 255) -> None:
+    """
+    Validate that a string is not empty and within length limits.
+
+    :param name: Field name for error messages.
+    :param value: The string to validate.
+    :param min_len: Minimal length of the string.
+    :param max_len: Maximal length of the string.
+    """
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be str, got {type(value).__name__}")
+    length = len(value)
+    if length < min_len:
+        raise ValueError(f"{name} must be at least {min_len} characters")
+    if length > max_len:
+        raise ValueError(f"{name} must be at most {max_len} characters")
+
+
 class EntityTypes(StrEnum):
     """Entity types."""
 

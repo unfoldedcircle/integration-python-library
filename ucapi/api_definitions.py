@@ -59,6 +59,8 @@ class WsMessages(StrEnum):
     GET_DRIVER_METADATA = "get_driver_metadata"
     SETUP_DRIVER = "setup_driver"
     SET_DRIVER_USER_DATA = "set_driver_user_data"
+    BROWSE_MEDIA = "browse_media"
+    SEARCH_MEDIA = "search_media"
 
 
 # Does WsMsgEvents need to be public?
@@ -78,6 +80,8 @@ class WsMsgEvents(StrEnum):
     DRIVER_SETUP_CHANGE = "driver_setup_change"
     ABORT_DRIVER_SETUP = "abort_driver_setup"
     ASSISTANT_EVENT = "assistant_event"
+    MEDIA_BROWSE = "media_browse"
+    MEDIA_SEARCH = "media_search"
 
 
 class Events(StrEnum):
@@ -354,3 +358,74 @@ class AssistantEvent:
     entity_id: str
     session_id: int
     data: AssistantEventData | None = None
+
+
+@dataclass(frozen=True)
+class Paging:
+    """
+    Paging options.
+
+    Attributes:
+        page (int):
+            Page number, 1-based.
+        limit (int):
+            Number of items returned per page.
+    """
+
+    page: int = 1
+    limit: int = 10
+
+    DEFAULT_PAGE = 1
+    DEFAULT_LIMIT = 10
+
+    def __post_init__(self):
+        """Validate fields."""
+        if self.page < 1:
+            raise ValueError(f"Invalid page: {self.page}. Must be >= 1.")
+        if not 1 <= self.limit <= 1000:
+            raise ValueError(
+                f"Invalid limit: {self.limit}. Must be between 1 and 1000."
+            )
+
+    @property
+    def offset(self) -> int:
+        """Calculate 0-based start offset."""
+        return self.limit * (self.page - 1)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Paging":
+        """Construct from a raw dictionary (e.g., from JSON)."""
+        return cls(
+            page=data.get("page", cls.DEFAULT_PAGE),
+            limit=data.get("limit", cls.DEFAULT_LIMIT),
+        )
+
+
+@dataclass(frozen=True)
+class Pagination:
+    """
+    Pagination metadata returned by the client.
+
+    Attributes:
+        page (int):
+            Current page number, 1-based. Must correspond to the requested page.
+        limit (int):
+            Number of items returned in this page.
+        count (int|None):
+            Optional if known: Total number of available items across all pages.
+    """
+
+    page: int
+    limit: int
+    count: int | None = None
+
+    def __post_init__(self):
+        """Validate fields."""
+        if self.page < 1:
+            raise ValueError("page must be >= 1")
+        if not 0 <= self.limit <= 1000:
+            raise ValueError(
+                f"Invalid limit: {self.limit}. Must be between 0 and 1000."
+            )
+        if self.count is not None and self.count < 0:
+            raise ValueError("count cannot be negative")
