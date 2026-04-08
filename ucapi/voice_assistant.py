@@ -300,7 +300,10 @@ class VoiceAssistant(Entity):
         name: str | dict[str, str],
         features: list[Features],
         attributes: dict[str, Any],
+        *,
         options: dict[str, Any] | VoiceAssistantEntityOptions | None = None,
+        icon: str | None = None,
+        description: str | dict[str, str] | None = None,
         area: str | None = None,
         cmd_handler: CommandHandler = None,
     ) -> None:
@@ -311,6 +314,8 @@ class VoiceAssistant(Entity):
         :param features: voice assistant features
         :param attributes: voice assistant attributes
         :param options: voice assistant options
+        :param icon: optional icon
+        :param description: optional description, either a string or a language dictionary
         :param area: optional area
         :param cmd_handler: handler for entity commands
         """
@@ -325,6 +330,8 @@ class VoiceAssistant(Entity):
                 if isinstance(options, dict)
                 else (None if options is None else asdict(options))
             ),
+            icon=icon,
+            description=description,
             area=area,
             cmd_handler=cmd_handler,
         )

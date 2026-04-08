@@ -70,8 +70,11 @@ class Switch(Entity):
         name: str | dict[str, str],
         features: list[Features],
         attributes: dict[str, Any],
+        *,
         device_class: DeviceClasses | None = None,
         options: dict[str, Any] | None = None,
+        icon: str | None = None,
+        description: str | dict[str, str] | None = None,
         area: str | None = None,
         cmd_handler: CommandHandler = None,
     ):
@@ -84,6 +87,8 @@ class Switch(Entity):
         :param attributes: switch attributes
         :param device_class: optional switch device class
         :param options: options
+        :param icon: optional icon
+        :param description: optional description, either a string or a language dictionary
         :param area: optional area
         :param cmd_handler: handler for entity commands
         """
@@ -95,6 +100,8 @@ class Switch(Entity):
             attributes,
             device_class=device_class,
             options=options,
+            icon=icon,
+            description=description,
             area=area,
             cmd_handler=cmd_handler,
         )

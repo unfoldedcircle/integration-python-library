@@ -128,9 +128,12 @@ class Remote(Entity):
         name: str | dict[str, str],
         features: list[Features],
         attributes: dict[str, Any],
+        *,
         simple_commands: list[str] | None = None,
         button_mapping: list[DeviceButtonMapping | dict[str, Any]] | None = None,
         ui_pages: list[UiPage | dict[str, Any]] | None = None,
+        icon: str | None = None,
+        description: str | dict[str, str] | None = None,
         area: str | None = None,
         cmd_handler: CommandHandler = None,
     ):
@@ -146,6 +149,8 @@ class Remote(Entity):
                Either with DeviceButtonMapping items or plain dictionary items.
         :param ui_pages: optional user interface page definitions.
                Either with UiPage items or plain dictionary items.
+        :param icon: optional icon
+        :param description: optional description, either a string or a language dictionary
         :param area: optional area
         :param cmd_handler: handler for entity commands
         """
@@ -163,6 +168,8 @@ class Remote(Entity):
             features,
             attributes,
             options=options,
+            icon=icon,
+            description=description,
             area=area,
             cmd_handler=cmd_handler,
         )

@@ -82,6 +82,8 @@ class Entity:
         *,
         device_class: str | None = None,
         options: dict[str, Any] | None = None,
+        icon: str | None = None,
+        description: str | dict[str, str] | None = None,
         area: str | None = None,
         cmd_handler: CommandHandler = None,
     ):
@@ -95,12 +97,20 @@ class Entity:
         :param attributes: entity attributes
         :param device_class: entity device class
         :param options: entity options
+        :param icon: optional icon
+        :param description: optional description, either a string or a language dictionary
         :param area: optional area name
         :param cmd_handler: optional handler for entity commands
         """
         self.id = identifier
         self.name = {"en": name} if isinstance(name, str) else name
         self.entity_type = entity_type
+        self.icon = icon
+        self.description = (
+            ({"en": description} if isinstance(description, str) else description)
+            if description
+            else None
+        )
         self.device_id = None
         self.features = features
         self.attributes = attributes

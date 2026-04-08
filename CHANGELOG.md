@@ -11,10 +11,12 @@ _Changes in the next release_
 
 ### Added
 - Media browsing and searching features to media-player entity.
+- Allow integrations to provide entity icon and description.
 
 ### Breaking Changes
 - Renamed `MediaType` to `MediaContentType` and changed enums to lowercase. See media-player entity documentation for more information.
 - Changed `str, Enum` to new Python 3.11 `StrEnum` class.
+- All entity constructors require named parameters for the optional fields.
 
 ---
 

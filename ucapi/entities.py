@@ -102,6 +102,10 @@ class Entities:
                 "features": entity.features,
                 "name": entity.name,
             }
+            if entity.icon:
+                res["icon"] = entity.icon
+            if entity.description:
+                res["description"] = entity.description
             if entity.device_class:
                 res["device_class"] = entity.device_class
             if entity.options:
