@@ -14,6 +14,7 @@ _Changes in the next release_
 
 ### Changed
 - Improved WS msg processing with dedicated consumer, producer and router tasks with asyncio queues ([#47](https://github.com/unfoldedcircle/integration-python-library/pull/47)).
+- Sanitize log messages to prevent sensitive information exposure.
 - Updated GitHub actions.
 
 ---
