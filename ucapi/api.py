@@ -389,7 +389,7 @@ class IntegrationAPI:
 
         if _LOG.isEnabledFor(logging.DEBUG):
             _LOG.debug(
-                "[%s] ->: %s", websocket.remote_address, sanitize_json_message(payload)
+                "[%s] <-: %s", websocket.remote_address, sanitize_json_message(payload)
             )
 
         match payload.get("kind"):
@@ -513,7 +513,10 @@ class IntegrationAPI:
         await self._enqueue_ws_payload(websocket, data)
 
     async def _process_ws_message(self, websocket, data: dict[str, Any]) -> None:
-        _LOG.debug("[%s] <-: %s", websocket.remote_address, data)
+        if _LOG.isEnabledFor(logging.DEBUG):
+            _LOG.debug(
+                "[%s] ->: %s", websocket.remote_address, sanitize_json_message(data)
+            )
 
         kind = data["kind"]
         req_id = data.get("id")
@@ -630,7 +633,7 @@ class IntegrationAPI:
         """
         if _LOG.isEnabledFor(logging.DEBUG):
             _LOG.debug(
-                "[%s] <-: <binary %d bytes>", websocket.remote_address, len(data)
+                "[%s] ->: <binary %d bytes>", websocket.remote_address, len(data)
             )
 
         # Parse IntegrationMessage from bytes
