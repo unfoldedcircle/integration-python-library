@@ -389,7 +389,7 @@ class IntegrationAPI:
 
         if _LOG.isEnabledFor(logging.DEBUG):
             _LOG.debug(
-                "[%s] ->: %s", websocket.remote_address, filter_log_msg_data(payload)
+                "[%s] <-: %s", websocket.remote_address, sanitize_json_message(payload)
             )
 
         match payload.get("kind"):
@@ -513,7 +513,10 @@ class IntegrationAPI:
         await self._enqueue_ws_payload(websocket, data)
 
     async def _process_ws_message(self, websocket, data: dict[str, Any]) -> None:
-        _LOG.debug("[%s] <-: %s", websocket.remote_address, data)
+        if _LOG.isEnabledFor(logging.DEBUG):
+            _LOG.debug(
+                "[%s] ->: %s", websocket.remote_address, sanitize_json_message(data)
+            )
 
         kind = data["kind"]
         req_id = data.get("id")
@@ -630,7 +633,7 @@ class IntegrationAPI:
         """
         if _LOG.isEnabledFor(logging.DEBUG):
             _LOG.debug(
-                "[%s] <-: <binary %d bytes>", websocket.remote_address, len(data)
+                "[%s] ->: <binary %d bytes>", websocket.remote_address, len(data)
             )
 
         # Parse IntegrationMessage from bytes
@@ -1777,46 +1780,83 @@ def local_hostname() -> str:
     )
 
 
-def filter_log_msg_data(data: dict[str, Any]) -> dict[str, Any]:
+_REDACTED_VALUE = "***REDACTED***"
+_SENSITIVE_KEYS = {
+    "token",
+    "token_id",
+    "access_token",
+    "refresh_token",
+    "id_token",
+    "authorization_code",
+    "client_secret",
+    "secret",
+    "auth_url",
+    "client_data",
+    "password",
+}
+
+
+def _filter_base64_images(json_data: Any) -> Any:
     """
-    Filter attribute fields to exclude for log messages in the given msg data dict.
+    Filter out base64 encoded images from a JSON object.
 
-    - Attributes are filtered in `data["msg_data"]`:
-      - dict object: key `attributes`
-      - list object: every list item `attributes`
-    - Filtered attributes: `MEDIA_IMAGE_URL`
+    **Attention:** the provided JSON object is modified in-place!
 
-    :param data: the message data dict
-    :return: copy of the message data dict with filtered attributes
+    :param json_data: The JSON object to filter.
+    :returns: The filtered JSON object.
+    """
+    if json_data and isinstance(json_data, dict) and "msg_data" in json_data:
+        msg_data = json_data["msg_data"]
+        if isinstance(msg_data, list):
+            for item in msg_data:
+                if (
+                    isinstance(item, dict)
+                    and "attributes" in item
+                    and isinstance(item["attributes"], dict)
+                    and item["attributes"]
+                    .get(MediaAttr.MEDIA_IMAGE_URL, "")
+                    .startswith("data:")
+                ):
+                    item["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:..."
+        elif (
+            isinstance(msg_data, dict)
+            and "attributes" in msg_data
+            and isinstance(msg_data["attributes"], dict)
+            and msg_data["attributes"]
+            .get(MediaAttr.MEDIA_IMAGE_URL, "")
+            .startswith("data:")
+        ):
+            msg_data["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:..."
+    return json_data
+
+
+def sanitize_json_message(data: Any) -> Any:
+    """
+    Sanitizes a JSON message by redacting sensitive fields such as tokens and secrets.
+
+    Base64 encoded images starting with `data:` are removed in `msg_data.attributes.media_image_url`
+    fields to limit log output.
+
+    The original message is not modified, the returned redacted message is a deepcopy.
+
+    :param data: The JSON object to be sanitized.
+    :return: The sanitized JSON object with sensitive information redacted.
     """
     # do not modify the original dict
-    log_upd = deepcopy(data)
-    if not log_upd:
+    json_upd = deepcopy(data)
+    if not json_upd:
         return {}
 
-    # filter out base64 encoded images in the media player's media_image_url attribute
-    if "msg_data" in log_upd:
-        if (
-            "attributes" in log_upd["msg_data"]
-            and MediaAttr.MEDIA_IMAGE_URL in log_upd["msg_data"]["attributes"]
-            and (
-                media_image_url := log_upd["msg_data"]["attributes"][
-                    MediaAttr.MEDIA_IMAGE_URL
-                ]
-            )
-            and media_image_url.startswith("data:")
-        ):
-            log_upd["msg_data"]["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:***"
-        elif isinstance(log_upd["msg_data"], list):
-            for item in log_upd["msg_data"]:
-                if (
-                    "attributes" in item
-                    and MediaAttr.MEDIA_IMAGE_URL in item["attributes"]
-                    and (
-                        media_image_url := item["attributes"][MediaAttr.MEDIA_IMAGE_URL]
-                    )
-                    and media_image_url.startswith("data:")
-                ):
-                    item["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:***"
+    def sanitize_for_logging(value: Any) -> Any:
+        if value and isinstance(value, (dict, list)):
+            if isinstance(value, list):
+                return [sanitize_for_logging(item) for item in value]
 
-    return log_upd
+            for k, v in value.items():
+                if k in _SENSITIVE_KEYS:
+                    value[k] = _REDACTED_VALUE
+                else:
+                    value[k] = sanitize_for_logging(v)
+        return value
+
+    return sanitize_for_logging(_filter_base64_images(json_upd))

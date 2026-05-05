@@ -1,22 +1,22 @@
 import unittest
 from copy import deepcopy
 
-from ucapi.api import filter_log_msg_data
+from ucapi.api import sanitize_json_message
 from ucapi.media_player import Attributes
 
 
-class TestFilterLogMsgData(unittest.TestCase):
+class TestSanitizeJsonMessage(unittest.TestCase):
 
     def test_no_modification_when_no_msg_data(self):
         data = {}
-        result = filter_log_msg_data(data)
+        result = sanitize_json_message(data)
         self.assertEqual(result, {}, "The result should be an empty dictionary")
 
     def test_no_changes_when_media_image_url_not_present(self):
         data = {"msg_data": {"attributes": {"state": "playing", "volume": 50}}}
         original = deepcopy(data)
 
-        result = filter_log_msg_data(data)
+        result = sanitize_json_message(data)
 
         self.assertEqual(
             result,
@@ -36,9 +36,9 @@ class TestFilterLogMsgData(unittest.TestCase):
         expected_result = deepcopy(data)
         expected_result["msg_data"]["attributes"][
             Attributes.MEDIA_IMAGE_URL
-        ] = "data:***"
+        ] = "data:..."
 
-        result = filter_log_msg_data(data)
+        result = sanitize_json_message(data)
 
         self.assertEqual(
             result, expected_result, "The MEDIA_IMAGE_URL attribute should be filtered"
@@ -65,12 +65,12 @@ class TestFilterLogMsgData(unittest.TestCase):
         expected_result = deepcopy(data)
         expected_result["msg_data"][0]["attributes"][
             Attributes.MEDIA_IMAGE_URL
-        ] = "data:***"
+        ] = "data:..."
         expected_result["msg_data"][1]["attributes"][
             Attributes.MEDIA_IMAGE_URL
-        ] = "data:***"
+        ] = "data:..."
 
-        result = filter_log_msg_data(data)
+        result = sanitize_json_message(data)
 
         self.assertEqual(
             result,
@@ -88,8 +88,48 @@ class TestFilterLogMsgData(unittest.TestCase):
         }
         original_data = deepcopy(data)
 
-        filter_log_msg_data(data)
+        sanitize_json_message(data)
 
         self.assertEqual(
             data, original_data, "The input data should not be modified by the function"
         )
+
+    def test_generic_sensitive_keys_redaction(self):
+        sensitive_keys = [
+            "token",
+            "token_id",
+            "access_token",
+            "refresh_token",
+            "id_token",
+            "authorization_code",
+            "client_secret",
+            "secret",
+            "auth_url",
+            "client_data",
+            "password",
+        ]
+
+        for key in sensitive_keys:
+            msg = {key: "sensitive-value", "other": "public-value"}
+            sanitized = sanitize_json_message(msg)
+            self.assertEqual(
+                sanitized[key], "***REDACTED***", f"{key} should be redacted"
+            )
+            self.assertEqual(
+                sanitized["other"], "public-value", "public fields should remain intact"
+            )
+
+    def test_recursive_redaction(self):
+        msg = {
+            "level1": {
+                "token": "secret1",
+                "level2": {"secret": "secret2", "public": "data"},
+            },
+            "array": [{"refresh_token": "secret3"}, "plain-string"],
+        }
+        sanitized = sanitize_json_message(msg)
+        self.assertEqual(sanitized["level1"]["token"], "***REDACTED***")
+        self.assertEqual(sanitized["level1"]["level2"]["secret"], "***REDACTED***")
+        self.assertEqual(sanitized["level1"]["level2"]["public"], "data")
+        self.assertEqual(sanitized["array"][0]["refresh_token"], "***REDACTED***")
+        self.assertEqual(sanitized["array"][1], "plain-string")
