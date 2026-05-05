@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Added
+- Add requests for supported entity types, version and localization. Only send available entities with supported entity types by @albaintor and @kennymc-c ([#47](https://github.com/unfoldedcircle/integration-python-library/pull/47)).
+
+### Changed
+- Improved WS msg processing with dedicated consumer, producer and router tasks with asyncio queues ([#47](https://github.com/unfoldedcircle/integration-python-library/pull/47)).
+- Updated GitHub actions.
+
 ---
 
 ## v0.6.0 - 2026-04-10
