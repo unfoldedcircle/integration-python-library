@@ -147,9 +147,10 @@ class IntegrationAPI:
         self, driver_path: str, setup_handler: uc.SetupHandler | None = None
     ):
         """
-        Load driver configuration and start integration-API WebSocket server.
+        Load driver configuration and start the integration-API WebSocket server.
 
-        :param driver_path: path to configuration file
+        :param driver_path: path to the configuration file. If it is not an absolute
+               path, the current working directory is used.
         :param setup_handler: optional driver setup handler if the driver metadata
                contains a setup_data_schema object
         """
@@ -389,7 +390,9 @@ class IntegrationAPI:
 
         if _LOG.isEnabledFor(logging.DEBUG):
             _LOG.debug(
-                "[%s] <-: %s", websocket.remote_address, sanitize_json_message(payload)
+                "[%s] <-: %s",
+                websocket.remote_address,
+                json.dumps(sanitize_json_message(payload)),
             )
 
         match payload.get("kind"):
@@ -515,7 +518,9 @@ class IntegrationAPI:
     async def _process_ws_message(self, websocket, data: dict[str, Any]) -> None:
         if _LOG.isEnabledFor(logging.DEBUG):
             _LOG.debug(
-                "[%s] ->: %s", websocket.remote_address, sanitize_json_message(data)
+                "[%s] ->: %s",
+                websocket.remote_address,
+                json.dumps(sanitize_json_message(data)),
             )
 
         kind = data["kind"]
