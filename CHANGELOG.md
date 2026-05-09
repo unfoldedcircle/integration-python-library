@@ -9,16 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+---
+
+## v0.7.0 - 2026-05-10
 ### Added
 - Add requests for supported entity types, version and localization. Only send available entities with supported entity types by @albaintor and @kennymc-c ([#47](https://github.com/unfoldedcircle/integration-python-library/pull/47)).
 
 ### Changed
 - Improved WS msg processing with dedicated consumer, producer and router tasks with asyncio queues ([#47](https://github.com/unfoldedcircle/integration-python-library/pull/47)).
 - Sanitize log messages to prevent sensitive information exposure ([#56](https://github.com/unfoldedcircle/integration-python-library/pull/56)).
-- Log WebSocket messages as JSON data instead of a Python dict.
+- Log WebSocket messages as JSON data instead of a Python dict ([#58](https://github.com/unfoldedcircle/integration-python-library/pull/58)).
 - Updated GitHub actions and test dependencies.
-
----
 
 ## v0.6.0 - 2026-04-10
 ### Breaking Changes
