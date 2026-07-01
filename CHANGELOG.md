@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+### Changed
+- Use pinned GitHub Actions dependencies.
+
 ---
 
 ## v0.7.0 - 2026-05-10
