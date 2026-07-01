@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 _Changes in the next release_
 
 ### Changed
-- Use pinned GitHub Actions dependencies.
+- Use pinned GitHub Actions dependencies ([#60](https://github.com/unfoldedcircle/integration-python-library/pull/60)).
+- Add dependabot configuration for GitHub actions.
 
 ---
 
