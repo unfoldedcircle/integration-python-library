@@ -1303,12 +1303,14 @@ class IntegrationAPI:
             )
 
             if isinstance(action, uc.RequestUserInput):
+                await asyncio.sleep(0.5)
                 await self.driver_setup_progress(websocket)
                 await self.request_driver_setup_user_input(
                     websocket, action.title, action.settings
                 )
                 result = True
             elif isinstance(action, uc.RequestUserConfirmation):
+                await asyncio.sleep(0.5)
                 await self.driver_setup_progress(websocket)
                 await self.request_driver_setup_user_confirmation(
                     websocket, action.title, action.header, action.image, action.footer
