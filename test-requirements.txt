@@ -6,5 +6,5 @@
 pylint==4.0.5
 flake8-docstrings==1.7.0
 flake8==7.3.0
-black==26.5.1
+black==26.10.1
 isort==8.0.1
