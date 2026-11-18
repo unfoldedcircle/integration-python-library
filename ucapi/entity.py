@@ -42,6 +42,7 @@ class EntityTypes(StrEnum):
     CLIMATE = "climate"
     LIGHT = "light"
     MEDIA_PLAYER = "media_player"
+    NUMBER = "number"
     REMOTE = "remote"
     SELECT = "select"
     SENSOR = "sensor"

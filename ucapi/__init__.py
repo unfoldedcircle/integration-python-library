@@ -58,6 +58,7 @@ from .media_player import (  # noqa: F401
     SearchOptions,
     SearchResults,
 )
+from .number import Number  # noqa: F401
 from .remote import Remote  # noqa: F401
 from .select import Select  # noqa: F401
 from .sensor import Sensor  # noqa: F401
