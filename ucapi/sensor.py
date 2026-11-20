@@ -45,8 +45,13 @@ class Commands(StrEnum):
 class DeviceClasses(StrEnum):
     """Sensor entity device classes.
 
-    See https://unfoldedcircle.github.io/core-api/entities/entity_sensor.html
-    for more information about binary sensors.
+    The ``timestamp``, ``date`` and ``duration`` device classes are formatted by the
+    UI as a date, time or time span, with the localization settings of the Remote. The
+    value must be sent in the specified machine-readable format and must not be
+    formatted for display.
+
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_sensor.md
+    for more information.
     """
 
     CUSTOM = "custom"
@@ -55,6 +60,16 @@ class DeviceClasses(StrEnum):
     """Battery charge in %"""
     CURRENT = "current"
     """Electrical current in ampere"""
+    DATE = "date"
+    """Calendar date without a time. Value: text in ISO 8601 format ``YYYY-MM-DD``,
+    e.g. ``2026-11-15``."""
+    DURATION = "duration"
+    """Time span, default unit: s. Supported units: ``ms``, ``s``, ``min``, ``h``, ``d``.
+    Value: number in the unit of the sensor.
+
+    A value in ``min``, ``h`` or ``d`` is shown as a time span in the unit of the sensor
+    and the next smaller unit, e.g. ``1.5`` hours as ``1h 30m``. A value in ``ms`` or
+    ``s`` is shown as a number with the unit."""
     ENERGY = "energy"
     """Energy in kilowatt-hour"""
     HUMIDITY = "humidity"
@@ -62,25 +77,35 @@ class DeviceClasses(StrEnum):
     POWER = "power"
     """Power in watt or kilowatt"""
     TEMPERATURE = "temperature"
+    """Temperature with automatic °C, °F conversion, depending on remote settings.
+    Use native_unit option if the temperature is measured in °F."""
+    TIMESTAMP = "timestamp"
+    """Point in time. Value: text in RFC 3339 format, including the UTC offset, e.g.
+    ``2026-11-15T04:23:31+00:00``."""
     VOLTAGE = "voltage"
     """Voltage in volt"""
     BINARY = "binary"
     """Binary sensor.
-     The binary specific device class is stored in the ``unit`` attribute."""
+    The binary specific device class is stored in the ``unit`` attribute."""
 
 
 class Options(StrEnum):
     """Sensor entity options."""
 
+    CUSTOM_LABEL = "custom_label"
+    """Label for a custom sensor if device_class is not specified or to override a
+    default unit."""
     CUSTOM_UNIT = "custom_unit"
     """Unit label for a custom sensor if device_class is not specified or to override
-     a default unit."""
+    a default unit."""
     NATIVE_UNIT = "native_unit"
     """The sensor's native unit of measurement to perform automatic conversion.
-     Applicable to device classes: ``temperature``."""
+    Applicable to device classes: ``temperature``."""
     DECIMALS = "decimals"
-    """Number of decimal places to show in the UI if the sensor provides the measurement
-     as a number. Not applicable to string values."""
+    """Number of decimal places to show in the UI if the sensor provides the
+    measurement as a number. Not applicable to string values and the ``timestamp`` and
+    ``date`` device classes. A ``duration`` value is rounded to this number of decimal
+    places before it is formatted as a time span."""
     MIN_VALUE = "min_value"
     """Not yet supported.
 
@@ -97,7 +122,7 @@ class Sensor(Entity):
     """
     Sensor entity class.
 
-    See https://unfoldedcircle.github.io/core-api/entities/entity_sensor.html
+    See https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_sensor.md
     for more information.
     """
 
