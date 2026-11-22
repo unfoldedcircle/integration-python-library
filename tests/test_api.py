@@ -107,6 +107,7 @@ class TestSanitizeJsonMessage(unittest.TestCase):
             "auth_url",
             "client_data",
             "password",
+            "header_value",
         ]
 
         for key in sensitive_keys:
@@ -118,6 +119,57 @@ class TestSanitizeJsonMessage(unittest.TestCase):
             self.assertEqual(
                 sanitized["other"], "public-value", "public fields should remain intact"
             )
+
+    def test_webview_secrets_redaction(self):
+        msg = {
+            "kind": "event",
+            "msg": "entity_available",
+            "msg_data": {
+                "entity_id": "dashboard",
+                "entity_type": "webview",
+                "options": {
+                    "url": "https://dashboard.example.com",
+                    "auth": {
+                        "type": "header",
+                        "username": "alice",
+                        "password": "secret-password",
+                        "token": "secret-token",
+                        "header_name": "X-API-Key",
+                        "header_value": "secret-api-key",
+                    },
+                    "cookies": [
+                        {
+                            "name": "session",
+                            "value": "secret-cookie-value",
+                            "domain": "dashboard.example.com",
+                            "http_only": True,
+                        },
+                        {"name": "theme", "value": "dark"},
+                    ],
+                },
+                "attributes": {
+                    "value": 42,
+                },
+            },
+        }
+        original = deepcopy(msg)
+        sanitized = sanitize_json_message(msg)
+
+        self.assertEqual(msg, original, "Original message must not be mutated")
+        opts = sanitized["msg_data"]["options"]
+        self.assertEqual(opts["url"], "https://dashboard.example.com")
+        self.assertEqual(opts["auth"]["username"], "alice")
+        self.assertEqual(opts["auth"]["header_name"], "X-API-Key")
+        self.assertEqual(opts["auth"]["password"], "***REDACTED***")
+        self.assertEqual(opts["auth"]["token"], "***REDACTED***")
+        self.assertEqual(opts["auth"]["header_value"], "***REDACTED***")
+        self.assertEqual(opts["cookies"][0]["name"], "session")
+        self.assertEqual(opts["cookies"][0]["value"], "***REDACTED***")
+        self.assertEqual(opts["cookies"][0]["domain"], "dashboard.example.com")
+        self.assertEqual(opts["cookies"][1]["name"], "theme")
+        self.assertEqual(opts["cookies"][1]["value"], "***REDACTED***")
+        # Unrelated "value" fields (e.g. number/sensor attributes) must NOT be redacted
+        self.assertEqual(sanitized["msg_data"]["attributes"]["value"], 42)
 
     def test_recursive_redaction(self):
         msg = {

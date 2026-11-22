@@ -1,0 +1,18 @@
+{
+  "driver_id": "webview_test_py",
+  "version": "0.0.1",
+  "min_core_api": "0.58.0",
+  "name": { "en": "Webview test Python" },
+  "icon": "uc:web",
+  "description": {
+    "en": "Python integration driver example with simple and advanced webview entities."
+  },
+  "port": 9085,
+  "developer": {
+    "name": "Unfolded Circle ApS",
+    "email": "hello@unfoldedcircle.com",
+    "url": "https://www.unfoldedcircle.com"
+  },
+  "home_page": "https://www.unfoldedcircle.com",
+  "release_date": "2026-11-22"
+}

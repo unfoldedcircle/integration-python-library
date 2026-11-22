@@ -43,24 +43,62 @@ class Entities:
 
         return self._storage[entity_id]
 
-    def add(self, entity: Entity) -> bool:
-        """Add entity to storage."""
+    def add(self, entity: Entity, *, notify: bool = False) -> bool:
+        """
+        Add entity to storage.
+
+        :param entity: entity to add.
+        :param notify: emit an ``entity_available`` event to notify connected Remotes
+                       supporting Integration-API >= 0.18.0. Defaults to False (safe for
+                       startup and bulk setup flows).
+        :return: True if entity was added, False if it already exists.
+        """
         if entity.id in self._storage:
             _LOG.debug("[%s] entity already exists: '%s'", self._id, entity.id)
             return False
 
         self._storage[entity.id] = entity
         _LOG.debug("[%s] entity added: '%s'", self._id, entity.id)
+        if notify:
+            self._events.emit(Events.ENTITY_AVAILABLE, entity)
         return True
 
-    def remove(self, entity_id: str) -> bool:
-        """Remove entity from storage."""
+    def update(self, entity: Entity, *, notify: bool = True) -> bool:
+        """
+        Update an existing entity definition in storage.
+
+        :param entity: updated entity definition.
+        :param notify: emit an ``entity_available`` event to notify connected Remotes
+                       supporting Integration-API >= 0.18.0. Defaults to True.
+        :return: True if entity was updated, False if it does not exist.
+        """
+        if entity.id not in self._storage:
+            _LOG.debug("[%s] cannot update entity '%s': not found", self._id, entity.id)
+            return False
+
+        self._storage[entity.id] = entity
+        _LOG.debug("[%s] entity updated: '%s'", self._id, entity.id)
+        if notify:
+            self._events.emit(Events.ENTITY_AVAILABLE, entity)
+        return True
+
+    def remove(self, entity_id: str, *, notify: bool = False) -> bool:
+        """
+        Remove entity from storage.
+
+        :param entity_id: entity identifier.
+        :param notify: emit an ``entity_removed`` event to notify connected Remotes
+                       supporting Integration-API >= 0.18.0. Defaults to False.
+        :return: True if entity was removed, False if it does not exist.
+        """
         if entity_id not in self._storage:
             _LOG.debug("[%s] cannot remove entity '%s': not found", self._id, entity_id)
-            return True
+            return False
 
-        del self._storage[entity_id]
+        entity = self._storage.pop(entity_id)
         _LOG.debug("[%s] entity deleted: %s", self._id, entity_id)
+        if notify:
+            self._events.emit(Events.ENTITY_REMOVED, entity)
         return True
 
     def update_attributes(self, entity_id: str, attributes: dict[str, Any]) -> bool:
@@ -86,36 +124,44 @@ class Entities:
         _LOG.debug("[%s]: entity '%s' attributes updated", self._id, entity_id)
         return True
 
+    def get_ids(self) -> list[str]:
+        """Return a list of all entity identifiers in storage."""
+        return list(self._storage.keys())
+
+    @staticmethod
+    def to_entity_data(entity: Entity) -> dict[str, Any]:
+        """
+        Serialize an entity into the Integration-API entity definition dictionary.
+
+        Attributes are not included.
+        """
+        res: dict[str, Any] = {
+            "entity_id": entity.id,
+            "entity_type": entity.entity_type,
+            "device_id": entity.device_id,
+            "features": entity.features,
+            "name": entity.name,
+        }
+        if entity.icon:
+            res["icon"] = entity.icon
+        if entity.description:
+            res["description"] = entity.description
+        if entity.device_class:
+            res["device_class"] = entity.device_class
+        if entity.options:
+            res["options"] = entity.options
+        if entity.area:
+            res["area"] = entity.area
+
+        return res
+
     def get_all(self) -> list[dict[str, Any]]:
         """
         Get all entity information in storage.
 
         Attributes are not returned.
         """
-        entities = []
-
-        for entity in self._storage.values():
-            res = {
-                "entity_id": entity.id,
-                "entity_type": entity.entity_type,
-                "device_id": entity.device_id,
-                "features": entity.features,
-                "name": entity.name,
-            }
-            if entity.icon:
-                res["icon"] = entity.icon
-            if entity.description:
-                res["description"] = entity.description
-            if entity.device_class:
-                res["device_class"] = entity.device_class
-            if entity.options:
-                res["options"] = entity.options
-            if entity.area:
-                res["area"] = entity.area
-
-            entities.append(res)
-
-        return entities
+        return [self.to_entity_data(entity) for entity in self._storage.values()]
 
     async def get_states(self) -> list[dict[str, Any]]:
         """
