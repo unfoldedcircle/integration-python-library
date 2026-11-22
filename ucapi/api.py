@@ -1754,36 +1754,28 @@ class IntegrationAPI:
         return await self._update_supported_entity_types(websocket, ctx)
 
     async def _get_available_entities(self, websocket, req_id) -> None:
-        supported = await self._get_client_supported_entity_types(websocket)
         available_entities = self._available_entities.get_all()
-        if supported:
-            filtered = []
-            for entity in available_entities:
-                entity_type = entity.get("entity_type")
-                if entity_type in supported:
-                    filtered.append(entity)
-                else:
-                    _LOG.info(
-                        "[%s] Omitting entity '%s' (%s): entity type not supported by Remote",
-                        websocket.remote_address,
-                        entity.get("entity_id"),
-                        entity_type,
-                    )
-            available_entities = filtered
-        else:
-            # Remote did not advertise supported entity types (older firmware):
-            # omit entity types that strictly require explicit capability advertisement.
-            filtered = []
-            for entity in available_entities:
-                if entity.get("entity_type") == EntityTypes.WEBVIEW:
-                    _LOG.info(
-                        "[%s] Omitting entity '%s' (webview): Remote supported entity types unknown",
-                        websocket.remote_address,
-                        entity.get("entity_id"),
-                    )
-                    continue
-                filtered.append(entity)
-            available_entities = filtered
+        if available_entities:
+            supported = await self._get_client_supported_entity_types(websocket)
+            if supported:
+                filtered = []
+                for entity in available_entities:
+                    entity_type = entity.get("entity_type")
+                    if entity_type in supported:
+                        filtered.append(entity)
+                    else:
+                        _LOG.info(
+                            "[%s] Omitting entity '%s' (%s): entity type not supported by Remote",
+                            websocket.remote_address,
+                            entity.get("entity_id"),
+                            entity_type,
+                        )
+                available_entities = filtered
+            else:
+                _LOG.warning(
+                    "[%s] Remote supported entity types unknown: returning all entities",
+                    websocket.remote_address,
+                )
         await self._send_ws_response(
             websocket,
             req_id,

@@ -256,8 +256,8 @@ class TestWebview(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(entities.remove("wv1", notify=True))
         self.assertEqual(removed_events, [wv1_silent])
 
-    async def test_discovery_filters_webview_by_client_capabilities(self):
-        """Return webview entities only to clients that explicitly advertise webview."""
+    async def test_discovery_filters_by_client_capabilities(self):
+        """Filter entities by supported_entity_types and return all when unknown."""
         api = IntegrationAPI(asyncio.get_running_loop())
         webview = Webview("wv", "Web", {Options.URL: "https://example.com"})
         switch = Switch("sw", "Switch", [], {})
@@ -267,7 +267,7 @@ class TestWebview(unittest.IsolatedAsyncioTestCase):
         for supported, expected_ids in (
             (["switch", "webview"], ["wv", "sw"]),
             (["switch"], ["sw"]),
-            ([], ["sw"]),
+            ([], ["wv", "sw"]),
         ):
             with self.subTest(supported=supported):
                 ws = Mock()
@@ -297,6 +297,29 @@ class TestWebview(unittest.IsolatedAsyncioTestCase):
                     ],
                     expected_ids,
                 )
+
+        # Also fall back to returning all entities if get_supported_entity_types fails
+        ws = Mock()
+        ws.remote_address = ("127.0.0.1", 12346)
+        with (
+            patch.object(
+                api,
+                "get_supported_entity_types",
+                new_callable=AsyncMock,
+                side_effect=asyncio.TimeoutError(),
+            ),
+            patch.object(api, "_enqueue_ws_payload", new_callable=AsyncMock) as send,
+        ):
+            await api._process_ws_message(  # pylint: disable=protected-access
+                ws,
+                {"kind": "req", "id": 2, "msg": "get_available_entities"},
+            )
+
+        response = json.loads(json.dumps(send.await_args.args[1]))
+        self.assertEqual(
+            [item["entity_id"] for item in response["msg_data"]["available_entities"]],
+            ["wv", "sw"],
+        )
 
     async def test_per_client_lifecycle_broadcast_and_configured_sync(self):
         """Broadcast entity_available/entity_removed only to capable clients and preserve attributes."""
