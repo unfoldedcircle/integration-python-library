@@ -49,6 +49,7 @@ class EntityTypes(StrEnum):
     SWITCH = "switch"
     IR_EMITTER = "ir_emitter"
     VOICE_ASSISTANT = "voice_assistant"
+    WEBVIEW = "webview"
 
 
 class CommonStates(StrEnum):

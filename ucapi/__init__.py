@@ -64,6 +64,7 @@ from .select import Select  # noqa: F401
 from .sensor import Sensor  # noqa: F401
 from .switch import Switch  # noqa: F401
 from .voice_assistant import VoiceAssistant  # noqa: F401
+from .webview import Webview  # noqa: F401
 
 try:
     from ._version import version as __version__

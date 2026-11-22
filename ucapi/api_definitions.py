@@ -76,6 +76,8 @@ class WsMsgEvents(StrEnum):
     AVAILABLE_ENTITIES = "available_entities"
     ENTITY_STATES = "entity_states"
     ENTITY_CHANGE = "entity_change"
+    ENTITY_AVAILABLE = "entity_available"
+    ENTITY_REMOVED = "entity_removed"
     DRIVER_METADATA = "driver_metadata"
     DRIVER_SETUP_CHANGE = "driver_setup_change"
     ABORT_DRIVER_SETUP = "abort_driver_setup"
@@ -112,6 +114,18 @@ class Events(StrEnum):
     - entity_id: entity identifier
     - entity_type: entity type
     - attributes: updated attributes"""
+    ENTITY_AVAILABLE = "entity_available"
+    """Entity added or updated in available entities.
+
+    Parameters:
+
+    - entity: Entity instance"""
+    ENTITY_REMOVED = "entity_removed"
+    """Entity removed from available entities.
+
+    Parameters:
+
+    - entity: Entity instance"""
     SUBSCRIBE_ENTITIES = "subscribe_entities"
     """Integration API `subscribe_events` message.
 

@@ -45,3 +45,11 @@ SettingTypePassword, SettingTypeCheckbox, SettingTypeDropdown, SettingTypeLabel.
 The [voice ](voice.py) example shows how to use the voice-assistant entity and receiving a microphone audio stream.
 
 Firmware version 2.8.2 or higher is required.
+
+## webview
+
+The [webview](webview.py) example shows how to use the [webview-entity](https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_webview.md).
+
+It defines a simple URL-only webview entity and a more complex webview entity with authentication credentials, TLS settings, cookies, custom options, and button mappings. After connecting to the Remote, it updates the credentials and notifies the Remote via the `entity_available` event.
+
+Firmware version 2.14.0 or higher is required.

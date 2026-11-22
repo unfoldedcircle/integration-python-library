@@ -31,7 +31,7 @@ from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 from . import api_definitions as uc
 from .api_definitions import WsMsgEvents
 from .entities import Entities
-from .entity import EntityTypes
+from .entity import Entity, EntityTypes
 from .media_player import Attributes as MediaAttr
 from .media_player import (
     BrowseResults,
@@ -88,6 +88,8 @@ class _WsContext:
     consumer_task: asyncio.Task | None = None
     producer_task: asyncio.Task | None = None
     router_task: asyncio.Task | None = None
+    supported_entity_types: set[str] | None = None
+    supported_entity_types_task: asyncio.Task | None = None
 
 
 # pylint: disable=too-many-public-methods, too-many-lines
@@ -129,8 +131,13 @@ class IntegrationAPI:
         self._voice_session_by_entity: dict[str, VoiceSessionKey] = {}
         # Websocket context with incoming & outgoing queues and handlers
         self._ws_contexts: dict[Any, _WsContext] = {}
-        # Supported entity types
-        self._supported_entity_types: list[str] | None = None
+
+        self._available_entities.add_listener(
+            uc.Events.ENTITY_AVAILABLE, self._on_entity_available
+        )
+        self._available_entities.add_listener(
+            uc.Events.ENTITY_REMOVED, self._on_entity_removed
+        )
 
         # Setup event loop
         asyncio.set_event_loop(self._loop)
@@ -228,6 +235,69 @@ class IntegrationAPI:
             uc.WsMsgEvents.ENTITY_CHANGE, data, uc.EventCategory.ENTITY
         )
 
+    async def _on_entity_available(self, entity: Entity) -> None:
+        configured = self._configured_entities.get(entity.id)
+        if configured is not None and configured is not entity:
+            # Preserve live runtime attributes on configured entities when updating definitions
+            merged_attributes = dict(entity.attributes)
+            merged_attributes.update(configured.attributes)
+            entity.attributes = merged_attributes
+            self._configured_entities.update(entity, notify=False)
+
+        await self._broadcast_entity_lifecycle_event(
+            uc.WsMsgEvents.ENTITY_AVAILABLE, Entities.to_entity_data(entity)
+        )
+
+    async def _on_entity_removed(self, entity: Entity) -> None:
+        data: dict[str, Any] = {
+            "entity_id": entity.id,
+            "entity_type": entity.entity_type,
+        }
+        if entity.device_id:
+            data["device_id"] = entity.device_id
+
+        await self._broadcast_entity_lifecycle_event(
+            uc.WsMsgEvents.ENTITY_REMOVED, data
+        )
+
+    async def _broadcast_entity_lifecycle_event(
+        self, msg: uc.WsMsgEvents, msg_data: dict[str, Any]
+    ) -> None:
+        """Broadcast an entity lifecycle event to capable connected clients.
+
+        Targets clients supporting Integration-API >= 0.18.0 (indicated by ``webview``
+        in ``supported_entity_types``) and the entity's type.
+        """
+        entity_type = msg_data.get("entity_type")
+        for websocket in self._clients.copy():
+            try:
+                supported = await self._get_client_supported_entity_types(websocket)
+                if not supported or EntityTypes.WEBVIEW not in supported:
+                    _LOG.debug(
+                        "[%s] Skipping %s event: Remote does not support Integration-API >= 0.18.0",
+                        websocket.remote_address,
+                        msg,
+                    )
+                    continue
+
+                if entity_type and entity_type not in supported:
+                    _LOG.info(
+                        "[%s] Skipping %s event: entity type '%s' not supported by Remote",
+                        websocket.remote_address,
+                        msg,
+                        entity_type,
+                    )
+                    continue
+
+                if websocket in self._clients:
+                    await self._send_ws_event(
+                        websocket, msg, msg_data, uc.EventCategory.ENTITY
+                    )
+            except Exception:  # pylint: disable=broad-exception-caught
+                _LOG.exception(
+                    "Failed to send %s event to %s", msg, websocket.remote_address
+                )
+
     async def _start_web_socket_server(self, host: str, port: int) -> None:
         async with serve(self._handle_ws, host, port):
             await asyncio.Future()
@@ -259,6 +329,9 @@ class IntegrationAPI:
 
             # authenticate on connection
             await self._authenticate(websocket, True)
+            ctx.supported_entity_types_task = self._loop.create_task(
+                self._update_supported_entity_types(websocket, ctx)
+            )
             self._events.emit(uc.Events.CLIENT_CONNECTED, websocket=websocket)
             tasks = [
                 t
@@ -685,6 +758,11 @@ class IntegrationAPI:
                 )
 
         if ctx is not None:
+            if (
+                ctx.supported_entity_types_task is not None
+                and not ctx.supported_entity_types_task.done()
+            ):
+                ctx.supported_entity_types_task.cancel()
             for fut in ctx.pending.values():
                 if not fut.done():
                     fut.set_exception(ConnectionError("WebSocket disconnected"))
@@ -1631,37 +1709,73 @@ class IntegrationAPI:
         return resp.get("msg_data")
 
     async def _update_supported_entity_types(
-        self, websocket, *, timeout: float = 5.0
-    ) -> None:
-        """Update supported entity types by remote."""
+        self, websocket, ctx: _WsContext | None = None, *, timeout: float = 5.0
+    ) -> set[str] | None:
+        """Query and cache supported entity types for a connected Remote."""
         await asyncio.sleep(0)
         try:
-            self._supported_entity_types = await self.get_supported_entity_types(
+            entity_types = await self.get_supported_entity_types(
                 websocket, timeout=timeout
             )
+            supported = (
+                set(entity_types)
+                if isinstance(entity_types, list) and entity_types
+                else None
+            )
+            if ctx is not None:
+                ctx.supported_entity_types = supported
             _LOG.debug(
                 "[%s] Supported entity types %s",
                 websocket.remote_address,
-                self._supported_entity_types,
+                entity_types,
             )
+            return supported
         except Exception as ex:  # pylint: disable=W0718
-            _LOG.error(
-                "[%s] Unable to retrieve entity types %s",
+            _LOG.debug(
+                "[%s] Unable to retrieve supported entity types: %s",
                 websocket.remote_address,
                 ex,
             )
+            return None
+
+    async def _get_client_supported_entity_types(self, websocket) -> set[str] | None:
+        """Return cached supported entity types for a client, awaiting in-flight queries."""
+        ctx = self._get_ws_context(websocket)
+        if ctx is None:
+            return await self._update_supported_entity_types(websocket, None)
+
+        if ctx.supported_entity_types is not None:
+            return ctx.supported_entity_types
+
+        if ctx.supported_entity_types_task is not None:
+            await ctx.supported_entity_types_task
+            return ctx.supported_entity_types
+
+        return await self._update_supported_entity_types(websocket, ctx)
 
     async def _get_available_entities(self, websocket, req_id) -> None:
-        if self._supported_entity_types is None:
-            # Request supported entity types from remote
-            await self._update_supported_entity_types(websocket)
         available_entities = self._available_entities.get_all()
-        if self._supported_entity_types:
-            available_entities = [
-                entity
-                for entity in available_entities
-                if entity.get("entity_type") in self._supported_entity_types
-            ]
+        if available_entities:
+            supported = await self._get_client_supported_entity_types(websocket)
+            if supported:
+                filtered = []
+                for entity in available_entities:
+                    entity_type = entity.get("entity_type")
+                    if entity_type in supported:
+                        filtered.append(entity)
+                    else:
+                        _LOG.info(
+                            "[%s] Omitting entity '%s' (%s): entity type not supported by Remote",
+                            websocket.remote_address,
+                            entity.get("entity_id"),
+                            entity_type,
+                        )
+                available_entities = filtered
+            else:
+                _LOG.warning(
+                    "[%s] Remote supported entity types unknown: returning all entities",
+                    websocket.remote_address,
+                )
         await self._send_ws_response(
             websocket,
             req_id,
@@ -1798,6 +1912,7 @@ _SENSITIVE_KEYS = {
     "auth_url",
     "client_data",
     "password",
+    "header_value",
 }
 
 
@@ -1852,6 +1967,14 @@ def sanitize_json_message(data: Any) -> Any:
     if not json_upd:
         return {}
 
+    def sanitize_cookie(cookie: Any) -> Any:
+        if isinstance(cookie, dict):
+            sanitized_cookie = sanitize_for_logging(cookie)
+            if "value" in sanitized_cookie:
+                sanitized_cookie["value"] = _REDACTED_VALUE
+            return sanitized_cookie
+        return sanitize_for_logging(cookie)
+
     def sanitize_for_logging(value: Any) -> Any:
         if value and isinstance(value, (dict, list)):
             if isinstance(value, list):
@@ -1860,6 +1983,8 @@ def sanitize_json_message(data: Any) -> Any:
             for k, v in value.items():
                 if k in _SENSITIVE_KEYS:
                     value[k] = _REDACTED_VALUE
+                elif k == "cookies" and isinstance(v, list):
+                    value[k] = [sanitize_cookie(cookie) for cookie in v]
                 else:
                     value[k] = sanitize_for_logging(v)
         return value
