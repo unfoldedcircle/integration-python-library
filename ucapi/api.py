@@ -1031,6 +1031,34 @@ class IntegrationAPI:
             uc.EventCategory.DEVICE,
         )
 
+    async def _retry_subscribe_entity(
+        self, entity_id: str, attempts: int = 20, delay: float = 0.5
+    ) -> None:
+        """
+        PATCHED: retry configuring an entity that wasn't available yet
+        at subscribe time (e.g. because subscribe_events arrived before
+        the device's connect() had finished creating its entities).
+
+        Polls _available_entities briefly and configures the entity as
+        soon as it appears, instead of silently dropping the
+        subscription forever on a single early miss.
+        """
+        for _ in range(attempts):
+            await asyncio.sleep(delay)
+            entity = self._available_entities.get(entity_id)
+            if entity is not None:
+                self._configured_entities.add(entity)
+                _LOG.info(
+                    "Entity %s became available - configured on retry "
+                    "(post-restart fix)",
+                    entity_id,
+                )
+                return
+        _LOG.warning(
+            "Entity %s still not available after retrying - giving up",
+            entity_id,
+        )
+
     async def _subscribe_events(
         self, websocket: Any, msg_data: dict[str, Any] | None
     ) -> None:
@@ -1043,9 +1071,11 @@ class IntegrationAPI:
                 self._configured_entities.add(entity)
             else:
                 _LOG.warning(
-                    "WARN: cannot subscribe entity %s: entity is not available",
+                    "WARN: cannot subscribe entity %s: entity is not available "
+                    "- will retry for a few seconds (post-restart fix)",
                     entity_id,
                 )
+                self._loop.create_task(self._retry_subscribe_entity(entity_id))
 
         self._events.emit(
             uc.Events.SUBSCRIBE_ENTITIES,
